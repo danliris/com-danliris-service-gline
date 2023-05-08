@@ -180,9 +180,9 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             {
                 data.Add(new CostCalculationRoViewModel
                 {
-                    RO_Number = reader["UnitName"].ToString(),
+                    RO_Number = reader["RO_Number"].ToString(),
                     Quantity = Convert.ToInt32(reader["Quantity"].ToString()),
-                    SMV_Sewing = Convert.ToDouble(reader["Quantity"].ToString()),
+                    SMV_Sewing = Convert.ToDouble(reader["SMV_Sewing"].ToString()),
                     Article = reader["Article"].ToString()
                 });
             }

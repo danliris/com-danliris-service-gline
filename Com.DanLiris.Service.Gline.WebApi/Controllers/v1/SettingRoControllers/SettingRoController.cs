@@ -47,12 +47,12 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
                 listData.AddRange(newData.AsQueryable().Select(s => new
                 {
                     s.Uid,
-                    s.rono_view,
-                    s.artikel_view,
-                    s.smv_view,
-                    s.quantity_view,
-                    s.line_view.nama_gedung_view,
-                    s.line_view.nama_line_view
+                    s.rono,
+                    s.artikel,
+                    s.smv,
+                    s.quantity,
+                    s.line.nama_gedung,
+                    s.line.nama_line
                 }));
 
                 return Ok(new
