@@ -93,7 +93,7 @@ namespace Com.DanLiris.Service.Gline.WebApi
             APIEndpoint.ConnectionString = Configuration.GetConnectionString("DefaultConnection") ?? Configuration["DefaultConnection"];
 
             /* Register */
-            services.AddDbContext<GlineDbContext>(options => options.UseSqlServer(connectionString, sqlServerOptions => sqlServerOptions.CommandTimeout(1000 * 60 * 20)));
+            services.AddDbContext<GlineDbContext>(options => options.UseSqlServer(connectionString, sqlServerOptions => sqlServerOptions.CommandTimeout(1000 * 60 * 20).UseRowNumberForPaging()));
             services.AddTransient<ISalesDbContext>(s => new SalesDbContext(connectionStringSales));
             //RegisterEndpoints();
             RegisterFacades(services);
