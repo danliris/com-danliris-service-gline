@@ -1,0 +1,10 @@
+FROM microsoft/aspnetcore-build:2.0.2
+WORKDIR /app
+
+COPY Com.DanLiris.Service.Gline.Lib/*.csproj ./Com.DanLiris.Service.Gline.Lib/
+COPY Com.DanLiris.Service.Gline.WebApi/*.csproj ./Com.DanLiris.Service.Gline.WebApi/
+RUN dotnet restore ./Com.DanLiris.Service.Gline.WebApi/
+
+COPY Com.DanLiris.Service.Gline.Lib/. ./Com.DanLiris.Service.Gline.Lib/
+COPY Com.DanLiris.Service.Gline.WebApi/. ./Com.DanLiris.Service.Gline.WebApi/
+RUN dotnet publish ./Com.DanLiris.Service.Gline.WebApi/ --output /out/ --configuration Release
