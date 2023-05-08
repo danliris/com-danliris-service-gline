@@ -63,7 +63,6 @@ namespace Com.DanLiris.Service.Gline.WebApi
                 .AddTransient<IProsesFacade, ProsesFacade>()
                 .AddTransient<ISettingRoFacade, SettingRoFacade>()
                 .AddTransient<ILineFacade, LineFacade>();
-
         }
 
         private void RegisterServices(IServiceCollection services, bool isTest)
@@ -98,6 +97,7 @@ namespace Com.DanLiris.Service.Gline.WebApi
             /* Register */
             services.AddDbContext<GlineDbContext>(options => options.UseSqlServer(connectionString, sqlServerOptions => sqlServerOptions.CommandTimeout(1000 * 60 * 20).UseRowNumberForPaging()));
             services.AddTransient<ISalesDbContext>(s => new SalesDbContext(connectionStringSales));
+
             //RegisterEndpoints();
             RegisterFacades(services);
             RegisterServices(services, env.Equals("Test"));
