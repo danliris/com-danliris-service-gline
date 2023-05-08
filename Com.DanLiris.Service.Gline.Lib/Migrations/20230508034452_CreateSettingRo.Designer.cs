@@ -12,9 +12,10 @@ using System;
 namespace Com.DanLiris.Service.Gline.Lib.Migrations
 {
     [DbContext(typeof(GlineDbContext))]
-    partial class GlineDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230508034452_CreateSettingRo")]
+    partial class CreateSettingRo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,8 +190,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Migrations
                     b.Property<string>("nama_unit")
                         .IsRequired()
                         .HasMaxLength(50);
-
-                    b.Property<int>("quantity");
 
                     b.Property<string>("rono")
                         .IsRequired()

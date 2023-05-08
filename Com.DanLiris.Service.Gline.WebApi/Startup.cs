@@ -26,6 +26,7 @@ using System.Linq;
 using Microsoft.ApplicationInsights.AspNetCore;
 using Com.DanLiris.Service.Gline.Lib.Interfaces;
 using Com.DanLiris.Service.Gline.Lib.Facades.ProsesFacades;
+using Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades;
 using Com.DanLiris.Service.Gline.Lib.Facades.LineFacades;
 
 namespace Com.DanLiris.Service.Gline.WebApi
@@ -60,6 +61,7 @@ namespace Com.DanLiris.Service.Gline.WebApi
                 .AddTransient<IMemoryCacheManager, MemoryCacheManager>()
                 .AddTransient<ICurrencyProvider, CurrencyProvider>()
                 .AddTransient<IProsesFacade, ProsesFacade>()
+                .AddTransient<ISettingRoFacade, SettingRoFacade>()
                 .AddTransient<ILineFacade, LineFacade>();
         }
 
@@ -87,12 +89,15 @@ namespace Com.DanLiris.Service.Gline.WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             string connectionString = Configuration.GetConnectionString(Constant.DEFAULT_CONNECTION) ?? Configuration[Constant.DEFAULT_CONNECTION];
+            string connectionStringSales = Configuration.GetConnectionString(Constant.SALES_CONNECTION) ?? Configuration[Constant.SALES_CONNECTION];
             string env = Configuration.GetValue<string>(Constant.ASPNETCORE_ENVIRONMENT);
             //string connectionStringLocalCashFlow = Configuration.GetConnectionString("LocalDbCashFlowConnection") ?? Configuration["LocalDbCashFlowConnection"];
             APIEndpoint.ConnectionString = Configuration.GetConnectionString("DefaultConnection") ?? Configuration["DefaultConnection"];
 
             /* Register */
             services.AddDbContext<GlineDbContext>(options => options.UseSqlServer(connectionString, sqlServerOptions => sqlServerOptions.CommandTimeout(1000 * 60 * 20).UseRowNumberForPaging()));
+            services.AddTransient<ISalesDbContext>(s => new SalesDbContext(connectionStringSales));
+
             //RegisterEndpoints();
             RegisterFacades(services);
             RegisterServices(services, env.Equals("Test"));
