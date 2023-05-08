@@ -12,9 +12,10 @@ using System;
 namespace Com.DanLiris.Service.Gline.Lib.Migrations
 {
     [DbContext(typeof(GlineDbContext))]
-    partial class GlineDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230508043339_AddQty_SettingRo")]
+    partial class AddQty_SettingRo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
