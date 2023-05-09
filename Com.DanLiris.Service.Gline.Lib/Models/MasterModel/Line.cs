@@ -24,6 +24,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.MasterModel
 
         public virtual ICollection<SettingRo> SettingRo { get; set; }
         public virtual ICollection<TransaksiOperator> TransaksiOperator { get; set; }
+        public virtual ICollection<TransaksiQc> TransaksiQc { get; set; }
 
     }
     
