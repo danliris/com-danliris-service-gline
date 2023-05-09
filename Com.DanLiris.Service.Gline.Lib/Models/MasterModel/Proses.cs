@@ -14,5 +14,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.MasterModel
         public double cycle_time { get; set; }
 
         public virtual ICollection<TransaksiOperator> TransaksiOperator { get; set; }
+        public virtual ICollection<TransaksiQc> TransaksiQc { get; set; }
     }
 }

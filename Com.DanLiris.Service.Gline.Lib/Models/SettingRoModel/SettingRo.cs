@@ -38,5 +38,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel
         public int quantity { get; set; }
 
         public virtual ICollection<TransaksiOperator> TransaksiOperator { get; set; }
+        public virtual ICollection<TransaksiQc> TransaksiQc { get; set; }
     }
 }
