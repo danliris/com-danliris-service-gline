@@ -1,4 +1,6 @@
-﻿using Com.Moonlay.Models;
+﻿using Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel;
+using Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel;
+using Com.Moonlay.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -21,6 +23,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.MasterModel
         public string nama_unit { get; set; }
 
         public virtual ICollection<SettingRo> SettingRo { get; set; }
+        public virtual ICollection<TransaksiOperator> TransaksiOperator { get; set; }
 
     }
     

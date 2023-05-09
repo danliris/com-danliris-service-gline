@@ -1,4 +1,4 @@
-﻿using Com.DanLiris.Service.Gline.Lib.Models;
+﻿using Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel;
 using Com.DanLiris.Service.Gline.Lib.Models.MasterModel;
 using Com.Moonlay.Data.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;

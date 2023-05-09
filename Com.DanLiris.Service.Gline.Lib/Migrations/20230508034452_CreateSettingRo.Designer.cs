@@ -130,7 +130,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Migrations
                     b.ToTable("Proses");
                 });
 
-            modelBuilder.Entity("Com.DanLiris.Service.Gline.Lib.Models.SettingRo", b =>
+            modelBuilder.Entity("Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel.SettingRo", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd();

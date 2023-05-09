@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Com.DanLiris.Service.Gline.Lib.Models;
+using Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel;
 using Com.DanLiris.Service.Gline.Lib.Utilities;
 using Com.DanLiris.Service.Gline.Lib.ViewModels;
 

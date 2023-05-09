@@ -1,7 +1,7 @@
 ﻿using Com.DanLiris.Service.Gline.Lib.Helpers;
 using Com.DanLiris.Service.Gline.Lib.Helpers.ReadResponse;
 using Com.DanLiris.Service.Gline.Lib.Interfaces;
-using Com.DanLiris.Service.Gline.Lib.Models;
+using Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel;
 using Com.DanLiris.Service.Gline.Lib.ViewModels.IntegrationViewModel;
 using Com.Moonlay.Models;
 using Com.Moonlay.NetCore.Lib;
