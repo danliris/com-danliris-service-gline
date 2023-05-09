@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace Com.DanLiris.Service.Gline.Lib.Models
+namespace Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel
 {
     public class SettingRo : StandardEntity<Guid>
     {
