@@ -20,6 +20,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.MasterModel
         [MaxLength(512)]
         public string nama_unit { get; set; }
 
+        public virtual ICollection<SettingRo> SettingRo { get; set; }
+
     }
     
 }

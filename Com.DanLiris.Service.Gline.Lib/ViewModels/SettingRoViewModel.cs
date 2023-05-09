@@ -28,12 +28,22 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels
 
             if (jam_target <= 0)
             {
-                yield return new ValidationResult("Target must be higher than 0", new List<string> { "nama_line" });
+                yield return new ValidationResult("Target Jam must be greater than 0", new List<string> { "target_jam" });
             }
 
             if (smv <= 0)
             {
-                yield return new ValidationResult("SMV must be higher than 0", new List<string> { "nama_line" });
+                yield return new ValidationResult("SMV must be greater than 0", new List<string> { "smv" });
+            }
+
+            if(setting_date.Date < DateTime.Now.Date)
+            {
+                yield return new ValidationResult($"Setting Date must be equal or greater than {DateTime.Now.Day}", new List<string> { "setting_date" });
+            } 
+
+            if(line.nama_line == 0)
+            {
+                yield return new ValidationResult("Line is required", new List<string> { "line" });
             }
         }
     }

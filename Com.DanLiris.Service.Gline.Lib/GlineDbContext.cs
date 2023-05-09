@@ -2,6 +2,7 @@
 using Com.DanLiris.Service.Gline.Lib.Models.MasterModel;
 using Com.Moonlay.Data.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Com.DanLiris.Service.Gline.Lib
 {
@@ -18,6 +19,11 @@ namespace Com.DanLiris.Service.Gline.Lib
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            {
+                relationship.DeleteBehavior = DeleteBehavior.Restrict;
+            }
         }
     }
 }

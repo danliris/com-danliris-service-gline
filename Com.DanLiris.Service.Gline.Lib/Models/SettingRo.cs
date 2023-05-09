@@ -21,6 +21,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Models
         public DateTime setting_date { get; set; }
         public TimeSpan setting_time { get; set; }
         public Guid id_line { get; set; }
+        [ForeignKey("id_line")]
+        public virtual Line line { get; set; }
         [Required]
         public int nama_line { get; set; }
         [Required]
