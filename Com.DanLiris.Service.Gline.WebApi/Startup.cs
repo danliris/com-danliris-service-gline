@@ -28,6 +28,7 @@ using Com.DanLiris.Service.Gline.Lib.Interfaces;
 using Com.DanLiris.Service.Gline.Lib.Facades.ProsesFacades;
 using Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades;
 using Com.DanLiris.Service.Gline.Lib.Facades.LineFacades;
+using Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades;
 
 namespace Com.DanLiris.Service.Gline.WebApi
 {
@@ -62,7 +63,9 @@ namespace Com.DanLiris.Service.Gline.WebApi
                 .AddTransient<ICurrencyProvider, CurrencyProvider>()
                 .AddTransient<IProsesFacade, ProsesFacade>()
                 .AddTransient<ISettingRoFacade, SettingRoFacade>()
-                .AddTransient<ILineFacade, LineFacade>();
+                .AddTransient<ILineFacade, LineFacade>()
+                .AddTransient<ITransaksiOperatorFacade, TransaksiOperatorFacade>()
+                .AddTransient<ITransaksiQcFacade, TransaksiQcFacade>();
         }
 
         private void RegisterServices(IServiceCollection services, bool isTest)

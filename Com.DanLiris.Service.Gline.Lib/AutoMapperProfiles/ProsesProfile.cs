@@ -10,9 +10,7 @@ namespace Com.DanLiris.Service.Gline.Lib.AutoMapperProfiles
         public ProsesProfile()
         {
             CreateMap<Proses, ProsesViewModel>()
-                .ForMember(d => d.Uid, opt => opt.MapFrom(s => s.Id))
-                .ForMember(d => d._id, opt => opt.Ignore())
-                .ForMember(d => d.Id, opt => opt.Ignore())
+                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
                 .ReverseMap();
         }
     }

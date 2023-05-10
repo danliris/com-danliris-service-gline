@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Com.DanLiris.Service.Gline.Lib.Interfaces;
-using Com.DanLiris.Service.Gline.Lib.Models.MasterModel;
+using Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel;
 using Com.DanLiris.Service.Gline.Lib.Services;
-using Com.DanLiris.Service.Gline.Lib.ViewModels.MasterViewModel;
+using Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel;
 using Com.DanLiris.Service.Gline.WebApi.Helpers;
 using Com.Moonlay.NetCore.Lib.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -12,22 +12,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
+namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
 {
     [Produces("application/json")]
     [ApiVersion("1.0")]
-    [Route("v{version:apiVersion}/line")]
+    [Route("v{version:apiVersion}/operator")]
     [Authorize]
-    public class LineController : Controller
+    public class TransaksiOperatorController : Controller
     {
         private readonly string ApiVersion = "1.0.0";
 
         private readonly IServiceProvider serviceProvider;
         private readonly IdentityService identityService;
         private readonly IMapper mapper;
-        private readonly ILineFacade facade;
+        private readonly ITransaksiOperatorFacade facade;
 
-        public LineController(IServiceProvider serviceProvider, ILineFacade facade, IMapper mapper)
+        public TransaksiOperatorController(IServiceProvider serviceProvider, ITransaksiOperatorFacade facade, IMapper mapper)
         {
             this.serviceProvider = serviceProvider;
             this.mapper = mapper;
@@ -41,16 +41,21 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
             try
             {
                 var Data = facade.Read(page, size, order, keyword, filter);
-                var newData = mapper.Map<List<LineViewModel>>(Data.Item1);
+                var newData = mapper.Map<List<TransaksiOperatorViewModel>>(Data.Item1);
 
                 List<object> listData = new List<object>();
                 listData.AddRange(newData.AsQueryable().Select(s => new
                 {
                     s.Id,
+                    s.npk,
+                    s.nama,
                     s.nama_line,
-                    s.nama_gedung,
-                    s.kode_unit,
-                    s.nama_unit
+                    s.rono,
+                    s.quantity,
+                    s.nama_proses,
+                    s.pass,
+                    s.pass_time,
+                    s.nama_shift
                 }));
 
                 return Ok(new
@@ -78,38 +83,8 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
             }
         }
 
-        [HttpGet("{id}")]
-        public IActionResult Get(Guid id)
-        {
-            try
-            {
-                var result = facade.ReadById(id);
-                LineViewModel viewModel = mapper.Map<LineViewModel>(result);
-                if (viewModel == null)
-                {
-                    throw new Exception("Invalid Id");
-                }
-
-                return Ok(new
-                {
-                    apiVersion = ApiVersion,
-                    statusCode = General.OK_STATUS_CODE,
-                    message = General.OK_MESSAGE,
-                    data = viewModel,
-                });
-
-            }
-            catch (Exception e)
-            {
-                Dictionary<string, object> Result =
-                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
-                    .Fail();
-                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
-            }
-        }
-
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] LineViewModel viewModel)
+        public async Task<IActionResult> Post([FromBody] TransaksiOperatorCreateModel viewModel)
         {
             identityService.Token = Request.Headers["Authorization"].First().Replace("Bearer ", "");
             identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
@@ -121,7 +96,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
                 viewModel.Id = Guid.NewGuid().ToString();
                 validateService.Validate(viewModel);
 
-                Line model = mapper.Map<Line>(viewModel);
+                TransaksiOperator model = mapper.Map<TransaksiOperator>(viewModel);
 
                 int result = await facade.Create(model, identityService.Username);
 
@@ -145,56 +120,6 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
                 return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
             }
         }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] Guid id, [FromBody] LineViewModel vm)
-        {
-            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
-
-            Line m = mapper.Map<Line>(vm);
-
-            IValidateService validateService = (IValidateService)serviceProvider.GetService(typeof(IValidateService));
-
-            try
-            {
-                validateService.Validate(vm);
-
-                int result = await facade.Update(id, m, identityService.Username);
-
-                return NoContent();
-            }
-            catch (ServiceValidationExeption e)
-            {
-                Dictionary<string, object> Result =
-                    new ResultFormatter(ApiVersion, General.BAD_REQUEST_STATUS_CODE, General.BAD_REQUEST_MESSAGE)
-                    .Fail(e);
-                return BadRequest(Result);
-
-            }
-            catch (Exception e)
-            {
-                Dictionary<string, object> Result =
-                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
-                    .Fail();
-                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
-            }
-
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete([FromRoute] Guid id)
-        {
-            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
-
-            try
-            {
-                facade.Delete(id, identityService.Username);
-                return NoContent();
-            }
-            catch (Exception)
-            {
-                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE);
-            }
-        }
     }
 }
+

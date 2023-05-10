@@ -7,7 +7,6 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.MasterViewModel
 {
     public class LineViewModel : BaseViewModel, IValidatableObject
     {
-        public Guid Uid { get; set; }
         public int nama_line { get; set; }
         public string nama_gedung { get; set; }
         public string kode_unit { get; set; }

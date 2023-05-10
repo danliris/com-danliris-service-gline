@@ -22,8 +22,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel
         public DateTime setting_date { get; set; }
         public TimeSpan setting_time { get; set; }
         public Guid id_line { get; set; }
-        [ForeignKey("id_line")]
-        public virtual Line line { get; set; }
         [Required]
         public int nama_line { get; set; }
         [Required]
@@ -36,8 +34,5 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel
         [MaxLength(50)]
         public string nama_unit { get; set; }
         public int quantity { get; set; }
-
-        public virtual ICollection<TransaksiOperator> TransaksiOperator { get; set; }
-        public virtual ICollection<TransaksiQc> TransaksiQc { get; set; }
     }
 }

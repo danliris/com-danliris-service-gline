@@ -46,7 +46,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
                 List<object> listData = new List<object>();
                 listData.AddRange(newData.AsQueryable().Select(s => new
                 {
-                    s.Uid,
+                    s.Id,
                     s.nama_proses,
                     s.cycle_time,
                 }));
@@ -116,6 +116,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
 
             try
             {
+                viewModel.Id = Guid.NewGuid().ToString();
                 validateService.Validate(viewModel);
 
                 Proses model = mapper.Map<Proses>(viewModel);

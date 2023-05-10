@@ -12,8 +12,5 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.MasterModel
         [MaxLength(255)]
         public string nama_proses { get; set; }
         public double cycle_time { get; set; }
-
-        public virtual ICollection<TransaksiOperator> TransaksiOperator { get; set; }
-        public virtual ICollection<TransaksiQc> TransaksiQc { get; set; }
     }
 }
