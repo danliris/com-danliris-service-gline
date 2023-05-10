@@ -46,13 +46,13 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
                 List<object> listData = new List<object>();
                 listData.AddRange(newData.AsQueryable().Select(s => new
                 {
-                    s.Uid,
+                    s.Id,
                     s.rono,
                     s.artikel,
                     s.smv,
                     s.quantity,
-                    s.line.nama_gedung,
-                    s.line.nama_line
+                    s.nama_gedung,
+                    s.nama_line
                 }));
 
                 return Ok(new
@@ -152,6 +152,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
 
             try
             {
+                viewModel.Id = Guid.NewGuid().ToString();
                 validateService.Validate(viewModel);
 
                 SettingRo model = mapper.Map<SettingRo>(viewModel);

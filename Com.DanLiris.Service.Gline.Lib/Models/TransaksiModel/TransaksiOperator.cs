@@ -19,12 +19,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel
         [MaxLength(32)]
         public string employee_role { get; set; }
         public Guid id_line { get; set; }
-        [ForeignKey("id_line")]
-        public virtual Line line { get; set; }
         public int nama_line { get; set; }
         public Guid id_setting_ro { get; set; }
-        [ForeignKey("id_setting_ro")]
-        public virtual SettingRo setting_ro { get; set; }
         [Required]
         [MaxLength(50)]
         public string rono { get; set; }
@@ -32,8 +28,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel
         public TimeSpan setting_time { get; set; }
         public int quantity { get; set; }
         public Guid id_proses { get; set; }
-        [ForeignKey("id_proses")]
-        public virtual Proses proses { get; set; }
         [Required]
         [MaxLength(255)]
         public string nama_proses { get; set; }

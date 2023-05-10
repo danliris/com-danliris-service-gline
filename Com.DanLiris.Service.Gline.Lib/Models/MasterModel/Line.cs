@@ -21,11 +21,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.MasterModel
         [Required]
         [MaxLength(512)]
         public string nama_unit { get; set; }
-
-        public virtual ICollection<SettingRo> SettingRo { get; set; }
-        public virtual ICollection<TransaksiOperator> TransaksiOperator { get; set; }
-        public virtual ICollection<TransaksiQc> TransaksiQc { get; set; }
-
     }
     
 }

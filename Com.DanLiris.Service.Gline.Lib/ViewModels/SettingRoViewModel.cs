@@ -9,14 +9,17 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels
 {
     public class SettingRoViewModel : BaseViewModel, IValidatableObject
     {
-        public Guid Uid { get; set; }
         public string rono { get; set; }
         public double jam_target { get; set; }
         public double smv { get; set; }
         public string artikel { get; set; }
         public DateTime setting_date { get; set; }
         public TimeSpan setting_time { get; set; }
-        public LineViewModel line { get; set; }
+        public Guid id_line { get; set; }
+        public int nama_line { get; set; }
+        public string nama_gedung { get; set; }
+        public string kode_unit { get; set; }
+        public string nama_unit { get; set; }
         public int quantity { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -41,7 +44,7 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels
                 yield return new ValidationResult($"Setting Date must be equal or greater than {DateTime.Now.Day}", new List<string> { "setting_date" });
             } 
 
-            if(line.nama_line == 0)
+            if(nama_line == 0)
             {
                 yield return new ValidationResult("Line is required", new List<string> { "line" });
             }
