@@ -16,5 +16,6 @@ namespace Com.DanLiris.Service.Gline.WebApi.Helpers
         public const string OK_MESSAGE = "Ok";
         public const string NOT_FOUND_MESSAGE = "Data Not Found";
         public const string BAD_REQUEST_MESSAGE = "Data does not pass validation";
+        public const string QUANTITY_OVERFLOW = "Quantity Ro Overflow";
     }
 }
