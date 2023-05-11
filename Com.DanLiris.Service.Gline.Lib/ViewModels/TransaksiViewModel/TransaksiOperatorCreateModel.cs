@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel
 {
-    public class TransaksiOperatorCreateModel : BaseViewModel, IValidatableObject
+    public class TransaksiOperatorCreateModel : BaseCreateModel, IValidatableObject
     {
         public string npk { get; set; }
         public string nama { get; set; }

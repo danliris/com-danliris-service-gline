@@ -1,5 +1,6 @@
 ﻿using Com.DanLiris.Service.Gline.Lib.Helpers;
 using Com.DanLiris.Service.Gline.Lib.Interfaces;
+using Com.DanLiris.Service.Gline.Lib.Models.ReworkModel;
 using Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel;
 using Com.Moonlay.Models;
 using Com.Moonlay.NetCore.Lib;
@@ -16,6 +17,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
     {
         private readonly GlineDbContext dbContext;
         private readonly DbSet<TransaksiOperator> dbSet;
+        private readonly DbSet<SummaryOperator> dbSetSummaryOperator;
+        private readonly DbSet<ReworkTime> dbSetReworkTime;
         public readonly IServiceProvider serviceProvider;
 
         private string USER_AGENT = "Facade";
@@ -23,7 +26,9 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
         public TransaksiOperatorFacade(GlineDbContext dbContext, IServiceProvider serviceProvider)
         {
             this.dbContext = dbContext;
-            this.dbSet = dbContext.Set<TransaksiOperator>();
+            dbSet = dbContext.Set<TransaksiOperator>();
+            dbSetSummaryOperator = dbContext.Set<SummaryOperator>();
+            dbSetReworkTime = dbContext.Set<ReworkTime>();
             this.serviceProvider = serviceProvider;
         }
 
@@ -69,15 +74,49 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
 
         public async Task<int> Create(TransaksiOperator model, string username)
         {
-            int Created = 0;
+            int Modified = 0;
 
             using (var transaction = this.dbContext.Database.BeginTransaction())
             {
                 try
                 {
+                    model.Id = Guid.NewGuid();
                     EntityExtension.FlagForCreate(model, username, USER_AGENT);
-                    this.dbSet.Add(model);
-                    Created = await dbContext.SaveChangesAsync();
+                    dbSet.Add(model);
+
+                    var summaryOperatorData = dbSetSummaryOperator.Where(i => i.npk == model.npk && i.rono == model.rono && i.nama_proses == model.nama_proses).FirstOrDefault();
+
+                    if (summaryOperatorData == null)
+                    {
+                        var summaryOperatorInsert = GenerateSummaryOperator(model, username);
+                        dbSetSummaryOperator.Add(summaryOperatorInsert);
+                       
+                    }
+                    else
+                    {
+                        if ((summaryOperatorData.jml_pass_per_ro + 1) > model.quantity)
+                        {
+                            return -1;
+                        }
+                        EntityExtension.FlagForUpdate(summaryOperatorData, username, USER_AGENT);
+                        summaryOperatorData.jml_pass_per_ro++;
+                        var reworkTimeOperator = dbSetReworkTime.Where(i => i.npk == model.npk).ToList();
+                        if (reworkTimeOperator.Count > 0)
+                        {
+                            summaryOperatorData.total_rework = reworkTimeOperator.Count;
+
+                            TimeSpan waktuPengerjaan = new TimeSpan(0, 0, 0);
+                            foreach (var item in reworkTimeOperator)
+                            {
+                                waktuPengerjaan += item.jam_akhir.Subtract(item.jam_awal);
+                            }
+                            summaryOperatorData.total_waktu_pengerjaan = waktuPengerjaan;
+                        }
+                        
+                        dbContext.Update(summaryOperatorData);
+                    }
+
+                    Modified = await dbContext.SaveChangesAsync();
                     transaction.Commit();
                 }
                 catch (Exception e)
@@ -88,8 +127,28 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
                 }
             }
 
-            return Created;
+            return Modified;
         }
+
+        private SummaryOperator GenerateSummaryOperator(TransaksiOperator transaksiOperator, string username)
+        {
+            var summaryOperator = new SummaryOperator();
+            EntityExtension.FlagForCreate(summaryOperator, username, USER_AGENT);
+            summaryOperator.npk = transaksiOperator.npk;
+            summaryOperator.nama = transaksiOperator.nama;
+            summaryOperator.jml_pass_per_ro = 1;
+            summaryOperator.total_rework = 0;
+            summaryOperator.total_waktu_pengerjaan = new TimeSpan(0, 0, 0);
+            summaryOperator.id_ro = transaksiOperator.id_setting_ro;
+            summaryOperator.rono = transaksiOperator.rono;
+            summaryOperator.setting_date = transaksiOperator.setting_date;
+            summaryOperator.id_proses = transaksiOperator.id_proses;
+            summaryOperator.nama_proses = transaksiOperator.nama_proses;
+
+            return summaryOperator;
+        }
+
+
 
     }
 }

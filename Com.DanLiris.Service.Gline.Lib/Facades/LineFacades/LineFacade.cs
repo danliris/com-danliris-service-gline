@@ -97,21 +97,21 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.LineFacades
         {
             int Updated = 0;
 
-            using (var transaction = this.dbContext.Database.BeginTransaction())
+            using (var transaction = dbContext.Database.BeginTransaction())
             {
                 try
                 {
-                    var existingModel = this.dbSet.AsNoTracking()
+                    var existingModel = dbSet.AsNoTracking()
                         .SingleOrDefault(pr => pr.Id == id && !pr.IsDeleted);
 
                     if (existingModel != null && id == model.Id)
                     {
                         EntityExtension.FlagForUpdate(model, user, USER_AGENT);
 
-                        this.dbContext.Update(model);
+                        dbContext.Update(model);
 
                         Updated = await dbContext.SaveChangesAsync();
-                        var updatedModel = this.dbSet.AsNoTracking()
+                        var updatedModel = dbSet.AsNoTracking()
                            .SingleOrDefault(pr => pr.Id == model.Id && !pr.IsDeleted);
                         transaction.Commit();
                     }
