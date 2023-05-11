@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Com.DanLiris.Service.Gline.Lib.Models.MasterModel;
 using Com.DanLiris.Service.Gline.Lib.Utilities;
+using Com.DanLiris.Service.Gline.Lib.ViewModels.IntegrationViewModel;
 using Com.DanLiris.Service.Gline.Lib.ViewModels.MasterViewModel;
 
 namespace Com.DanLiris.Service.Gline.Lib.AutoMapperProfiles

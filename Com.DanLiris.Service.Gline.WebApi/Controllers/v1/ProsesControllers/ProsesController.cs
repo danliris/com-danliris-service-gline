@@ -9,8 +9,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using CsvHelper;
+using Com.DanLiris.Service.Gline.Lib.ViewModels.IntegrationViewModel;
 
 namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
 {
@@ -26,6 +29,9 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
         private readonly IdentityService identityService;
         private readonly IMapper mapper;
         private readonly IProsesFacade facade;
+
+        private readonly string ContentType = "application/vnd.openxmlformats";
+        private readonly string FileName = string.Concat("Error Log - Upload Proses - ", DateTime.Now.ToString("dd MMM yyyy"), ".csv");
 
         public ProsesController(IServiceProvider serviceProvider, IProsesFacade facade, IMapper mapper)
         {
@@ -192,6 +198,92 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
             catch (Exception)
             {
                 return StatusCode(General.INTERNAL_ERROR_STATUS_CODE);
+            }
+        }
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> PostCSVFileAsync()
+        {
+            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
+
+            try
+            {
+
+                if (Request.Form.Files.Count > 0)
+                {
+                    var UploadedFile = Request.Form.Files[0];
+                    StreamReader Reader = new StreamReader(UploadedFile.OpenReadStream());
+                    List<string> FileHeader = new List<string>(Reader.ReadLine().Replace("\"", string.Empty).Split(","));
+                    var ValidHeader = facade.CsvHeader.SequenceEqual(FileHeader, StringComparer.OrdinalIgnoreCase);
+
+                    if (ValidHeader)
+                    {
+                        Reader.DiscardBufferedData();
+                        Reader.BaseStream.Seek(0, SeekOrigin.Begin);
+                        Reader.BaseStream.Position = 0;
+                        CsvReader Csv = new CsvReader(Reader);
+                        Csv.Configuration.IgnoreQuotes = false;
+                        Csv.Configuration.Delimiter = ",";
+                        Csv.Configuration.RegisterClassMap<Lib.Facades.ProsesFacades.ProsesFacade.ProsesMap>();
+                        Csv.Configuration.HeaderValidated = null;
+
+                        List<ProsesCsvViewModel> viewModelCsv = Csv.GetRecords<ProsesCsvViewModel>().ToList();
+                        Tuple<bool, List<object>> Validated = facade.UploadValidate(ref viewModelCsv, Request.Form.ToList());
+
+                        Reader.Close();
+
+                        if (Validated.Item1)
+                        {
+
+                            List<ProsesViewModel> viewModel = await facade.MapCsvToViewModel(viewModelCsv);
+                            List<Proses> model = mapper.Map<List<Proses>>(viewModel);
+                            await facade.UploadData(model, identityService.Username);
+
+                            Dictionary<string, object> Result =
+                               new ResultFormatter(ApiVersion, General.CREATED_STATUS_CODE, General.OK_MESSAGE)
+                               .Ok();
+
+                            return Created(HttpContext.Request.Path, Result);
+                        }
+                        else
+                        {
+                            using (MemoryStream memoryStream = new MemoryStream())
+                            {
+                                using (StreamWriter streamWriter = new StreamWriter(memoryStream))
+                                {
+                                    using (CsvWriter csvWriter = new CsvWriter(streamWriter))
+                                    {
+                                        csvWriter.WriteRecords(Validated.Item2);
+                                    }
+
+                                    return File(memoryStream.ToArray(), ContentType, FileName);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Dictionary<string, object> Result =
+                          new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, General.CSV_ERROR_MESSAGE)
+                          .Fail();
+
+                        return NotFound(Result);
+                    }
+                }
+                else
+                {
+                    Dictionary<string, object> Result =
+                        new ResultFormatter(ApiVersion, General.BAD_REQUEST_STATUS_CODE, General.NO_FILE_ERROR_MESSAGE)
+                            .Fail();
+                    return BadRequest(Result);
+                }
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                     new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                     .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
             }
         }
     }

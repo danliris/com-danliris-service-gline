@@ -1,12 +1,16 @@
 ﻿using Com.DanLiris.Service.Gline.Lib.Helpers;
 using Com.DanLiris.Service.Gline.Lib.Interfaces;
 using Com.DanLiris.Service.Gline.Lib.Models.MasterModel;
+using Com.DanLiris.Service.Gline.Lib.ViewModels.IntegrationViewModel;
+using Com.DanLiris.Service.Gline.Lib.ViewModels.MasterViewModel;
 using Com.Moonlay.Models;
 using Com.Moonlay.NetCore.Lib;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,7 +50,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ProsesFacades
                    nama_proses = s.nama_proses,
                    cycle_time = s.cycle_time
                });
-               
+
 
             Dictionary<string, string> FilterDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(Filter);
             Query = QueryHelper<Proses>.ConfigureFilter(Query, FilterDictionary);
@@ -154,6 +158,115 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ProsesFacades
             }
 
             return Deleted;
+        }
+
+        public List<string> CsvHeader { get; } = new List<string>()
+        {
+            "Proses",
+            "Cycle Time"
+        };
+
+        public sealed class ProsesMap : CsvHelper.Configuration.ClassMap<ProsesCsvViewModel>
+        {
+            public ProsesMap()
+            {
+                Map(p => p.nama_proses).Index(0);
+                Map(p => p.cycle_time).Index(1);
+            }
+        }
+
+        public async Task<List<ProsesViewModel>> MapCsvToViewModel(List<ProsesCsvViewModel> data)
+        {
+            List<ProsesViewModel> items = new List<ProsesViewModel>();
+
+            foreach (var i in data)
+            {
+                ProsesViewModel item = new ProsesViewModel
+                {
+                    nama_proses = i.nama_proses,
+                    cycle_time = string.IsNullOrWhiteSpace(i.cycle_time) ? 0 : Convert.ToDouble(i.cycle_time)
+                };
+
+                items.Add(item);
+            }
+
+            return items;
+        }
+
+        public Tuple<bool, List<object>> UploadValidate(ref List<ProsesCsvViewModel> data, List<KeyValuePair<string, StringValues>> list)
+        {
+            List<object> ErrorList = new List<object>();
+            string ErrorMessage;
+            bool Valid = true;
+
+            IQueryable<Proses> Query = this.dbSet;
+
+            foreach (ProsesCsvViewModel item in data)
+            {
+                ErrorMessage = "";
+
+                var isExist = Query.Where(s => s.nama_proses == item.nama_proses).ToList();
+
+                if (isExist.Count > 0)
+                {
+                    ErrorMessage = string.Concat(ErrorMessage, "Proses Is Already Exist, ");
+                }
+
+                if (string.IsNullOrWhiteSpace(item.nama_proses))
+                {
+                    ErrorMessage = string.Concat(ErrorMessage, "Nama Proses Is Required, ");
+                }
+
+                double cycle_time = 0;
+                if (string.IsNullOrWhiteSpace(item.cycle_time))
+                {
+                    ErrorMessage = string.Concat(ErrorMessage, "Cycle Time Is Required, ");
+                }
+                else
+                {
+                    if (!double.TryParse(item.cycle_time, out cycle_time))
+                    {
+                        ErrorMessage = string.Concat(ErrorMessage, "Cycle Time Must Be Numeric, ");
+                    }
+                }
+
+                if (cycle_time <= 0)
+                {
+                    ErrorMessage = string.Concat(ErrorMessage, "Cycle Time Must Be Greater Than 0, ");
+                }
+
+
+                if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    ErrorMessage = ErrorMessage.Remove(ErrorMessage.Length - 2);
+                    var Error = new ExpandoObject() as IDictionary<string, object>;
+                    Error.Add("Proses", item.nama_proses);
+                    Error.Add("Cycle Time", item.cycle_time);
+                    Error.Add("Error", ErrorMessage);
+
+                    ErrorList.Add(Error);
+                }
+            }
+
+            if (ErrorList.Count > 0)
+            {
+                Valid = false;
+            }
+
+            return Tuple.Create(Valid, ErrorList);
+        }
+
+        public async Task<int> UploadData(List<Proses> data, string username)
+        {
+            foreach (var i in data)
+            {
+                EntityExtension.FlagForCreate(i, username, USER_AGENT);
+                dbSet.Add(i);
+            }
+
+            var result = await dbContext.SaveChangesAsync();
+
+            return result;
         }
     }
 }
