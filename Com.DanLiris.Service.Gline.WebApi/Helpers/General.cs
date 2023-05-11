@@ -19,5 +19,6 @@ namespace Com.DanLiris.Service.Gline.WebApi.Helpers
         public const string CSV_ERROR_MESSAGE = "The header row of CSV file is not valid";
         public const string NO_FILE_ERROR_MESSAGE = "File not found";
         public const string NO_ACCESS_TOKEN = "No Access Token";
+        public const string QUANTITY_OVERFLOW = "Quantity Ro Overflow";
     }
 }

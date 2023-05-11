@@ -15,8 +15,8 @@ namespace Com.DanLiris.Service.Gline.Lib.AutoMapperProfiles
                 .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
                 .ReverseMap();
 
-            CreateMap<TransaksiOperator, TransaksiOperatorCreateModel>()
-                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
+            CreateMap<TransaksiOperatorCreateModel, TransaksiOperator>()
+                .ForMember(d => d.Id, opt => opt.Ignore())
                 .ReverseMap();
         }
     }
