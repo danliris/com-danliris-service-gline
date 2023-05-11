@@ -11,6 +11,8 @@
     <Compile Remove="Migrations\20230509071352_CreateTransaksiOperator.Designer.cs" />
     <Compile Remove="Migrations\20230509085552_CreateTransaksiQc.cs" />
     <Compile Remove="Migrations\20230509085552_CreateTransaksiQc.Designer.cs" />
+    <Compile Remove="Migrations\20230511031928_DeleteShiftAndModifySummaryOperator.cs" />
+    <Compile Remove="Migrations\20230511031928_DeleteShiftAndModifySummaryOperator.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

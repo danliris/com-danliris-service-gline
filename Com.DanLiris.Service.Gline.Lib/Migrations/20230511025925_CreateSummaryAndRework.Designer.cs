@@ -12,9 +12,10 @@ using System;
 namespace Com.DanLiris.Service.Gline.Lib.Migrations
 {
     [DbContext(typeof(GlineDbContext))]
-    partial class GlineDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230511025925_CreateSummaryAndRework")]
+    partial class CreateSummaryAndRework
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -329,6 +330,62 @@ namespace Com.DanLiris.Service.Gline.Lib.Migrations
                     b.ToTable("SettingRo");
                 });
 
+            modelBuilder.Entity("Com.DanLiris.Service.Gline.Lib.Models.ShiftModel.Shift", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<bool>("Active");
+
+                    b.Property<string>("CreatedAgent")
+                        .IsRequired()
+                        .HasMaxLength(255);
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255);
+
+                    b.Property<DateTime>("CreatedUtc");
+
+                    b.Property<string>("DeletedAgent")
+                        .IsRequired()
+                        .HasMaxLength(255);
+
+                    b.Property<string>("DeletedBy")
+                        .IsRequired()
+                        .HasMaxLength(255);
+
+                    b.Property<DateTime>("DeletedUtc");
+
+                    b.Property<bool>("IsDeleted");
+
+                    b.Property<string>("LastModifiedAgent")
+                        .IsRequired()
+                        .HasMaxLength(255);
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(255);
+
+                    b.Property<DateTime>("LastModifiedUtc");
+
+                    b.Property<TimeSpan>("jam_mulai");
+
+                    b.Property<TimeSpan>("jam_selesai");
+
+                    b.Property<string>("nama_shift")
+                        .IsRequired()
+                        .HasMaxLength(32);
+
+                    b.Property<string>("npk")
+                        .IsRequired()
+                        .HasMaxLength(32);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Shift");
+                });
+
             modelBuilder.Entity("Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel.SummaryOperator", b =>
                 {
                     b.Property<Guid>("Id")
@@ -368,8 +425,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Migrations
 
                     b.Property<DateTime>("LastModifiedUtc");
 
-                    b.Property<Guid>("id_proses");
-
                     b.Property<Guid>("id_ro");
 
                     b.Property<int>("jml_pass_per_ro");
@@ -377,10 +432,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Migrations
                     b.Property<string>("nama")
                         .IsRequired()
                         .HasMaxLength(32);
-
-                    b.Property<string>("nama_proses")
-                        .IsRequired()
-                        .HasMaxLength(255);
 
                     b.Property<string>("npk")
                         .IsRequired()
