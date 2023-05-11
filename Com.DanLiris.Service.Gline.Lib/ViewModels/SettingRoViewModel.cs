@@ -39,15 +39,16 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels
                 yield return new ValidationResult("SMV must be greater than 0", new List<string> { "smv" });
             }
 
-            if(setting_date.Date < DateTime.Now.Date)
-            {
-                yield return new ValidationResult($"Setting Date must be equal or greater than {DateTime.Now.Day}", new List<string> { "setting_date" });
-            } 
-
-            if(nama_line == 0)
+            if (nama_line == 0)
             {
                 yield return new ValidationResult("Line is required", new List<string> { "line" });
             }
+
+            if (setting_date.Date < DateTime.Now.Date)
+            {
+                yield return new ValidationResult($"Setting Date must be equal or greater than {DateTime.Now.Date}", new List<string> { "setting_date" });
+            } 
+
         }
     }
 }
