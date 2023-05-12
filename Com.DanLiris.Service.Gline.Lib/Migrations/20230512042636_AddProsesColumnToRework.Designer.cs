@@ -12,9 +12,10 @@ using System;
 namespace Com.DanLiris.Service.Gline.Lib.Migrations
 {
     [DbContext(typeof(GlineDbContext))]
-    partial class GlineDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230512042636_AddProsesColumnToRework")]
+    partial class AddProsesColumnToRework
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -608,9 +609,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Migrations
 
                     b.Property<Guid>("id_line");
 
-                    b.Property<Guid?>("id_proses");
-
-                    b.Property<Guid?>("id_proses_reject");
+                    b.Property<Guid>("id_proses");
 
                     b.Property<Guid>("id_setting_ro");
 
@@ -625,8 +624,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Migrations
                     b.Property<string>("nama_proses")
                         .IsRequired()
                         .HasMaxLength(255);
-
-                    b.Property<string>("nama_proses_reject");
 
                     b.Property<string>("nama_reject")
                         .HasMaxLength(32);

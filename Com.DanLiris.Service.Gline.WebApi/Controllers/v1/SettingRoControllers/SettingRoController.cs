@@ -112,6 +112,50 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
             }
         }
 
+        [HttpGet("ro-ongoing-op")]
+        public IActionResult GetRoongoingOp(string keyword = null, string filter = "{}")
+        {
+            try
+            {
+                var Data = facade.GetRoOngoingOp(keyword, filter);
+
+                List<object> listData = new List<object>();
+                listData.AddRange(Data.Item1.AsQueryable().Select(s => new
+                {
+                    s._rono,
+                    s._jam_target,
+                    s._smv,
+                    s._artikel,
+                    s._setting_date,
+                    s._setting_time,
+                    s._nama_unit,
+                    s._total_output_ro,
+                    s._total_output_hari,
+                    s._total_rework,
+                    s._total_pengerjaan
+                }));
+
+                return Ok(new
+                {
+                    apiVersion = ApiVersion,
+                    statusCode = General.OK_STATUS_CODE,
+                    message = General.OK_MESSAGE,
+                    data = listData,
+                    info = new Dictionary<string, object>
+                    {
+                        { "total", Data.Item2 },
+                    },
+                });
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
         [HttpGet("{id}")]
         public IActionResult Get(Guid id)
         {

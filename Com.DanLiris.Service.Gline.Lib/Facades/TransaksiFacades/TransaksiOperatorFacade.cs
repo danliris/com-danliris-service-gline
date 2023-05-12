@@ -18,7 +18,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
         private readonly GlineDbContext dbContext;
         private readonly DbSet<TransaksiOperator> dbSet;
         private readonly DbSet<SummaryOperator> dbSetSummaryOperator;
-        private readonly DbSet<ReworkTime> dbSetReworkTime;
         public readonly IServiceProvider serviceProvider;
 
         private string USER_AGENT = "Facade";
@@ -28,13 +27,12 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             this.dbContext = dbContext;
             dbSet = dbContext.Set<TransaksiOperator>();
             dbSetSummaryOperator = dbContext.Set<SummaryOperator>();
-            dbSetReworkTime = dbContext.Set<ReworkTime>();
             this.serviceProvider = serviceProvider;
         }
 
         public Tuple<List<TransaksiOperator>, int, Dictionary<string, string>> Read(int Page = 1, int Size = 25, string Order = "{}", string Keyword = null, string Filter = "{}")
         {
-            IQueryable<TransaksiOperator> Query = this.dbSet;
+            IQueryable<TransaksiOperator> Query = dbSet;
 
             List<string> searchAttributes = new List<string>()
             {
@@ -100,18 +98,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
                         }
                         EntityExtension.FlagForUpdate(summaryOperatorData, username, USER_AGENT);
                         summaryOperatorData.jml_pass_per_ro++;
-                        var reworkTimeOperator = dbSetReworkTime.Where(i => i.npk == model.npk).ToList();
-                        if (reworkTimeOperator.Count > 0)
-                        {
-                            summaryOperatorData.total_rework = reworkTimeOperator.Count;
-
-                            TimeSpan waktuPengerjaan = new TimeSpan(0, 0, 0);
-                            foreach (var item in reworkTimeOperator)
-                            {
-                                waktuPengerjaan += item.jam_akhir.Subtract(item.jam_awal);
-                            }
-                            summaryOperatorData.total_waktu_pengerjaan = waktuPengerjaan;
-                        }
                         
                         dbContext.Update(summaryOperatorData);
                     }
