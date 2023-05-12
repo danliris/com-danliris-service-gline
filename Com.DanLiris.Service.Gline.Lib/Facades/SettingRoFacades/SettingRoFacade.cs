@@ -25,6 +25,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
         private ISalesDbContext salesDbContext;
         private readonly DbSet<SettingRo> dbSet;
         private readonly DbSet<TransaksiOperator> dbSetTransaksiOperator;
+        private readonly DbSet<TransaksiQc> dbSetTransaksiQc;
         private readonly DbSet<SummaryOperator> dbSetSummaryOperator;
         private readonly DbSet<Rework> dbSetRework;
         public readonly IServiceProvider serviceProvider;
@@ -37,6 +38,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             this.salesDbContext = salesDbContext;
             this.dbSet = dbContext.Set<SettingRo>();
             this.dbSetTransaksiOperator = dbContext.Set<TransaksiOperator>();
+            this.dbSetTransaksiQc = dbContext.Set<TransaksiQc>();
             this.dbSetSummaryOperator = dbContext.Set<SummaryOperator>();
             this.dbSetRework = dbContext.Set<Rework>();
             this.serviceProvider = serviceProvider;
@@ -278,9 +280,77 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             return Tuple.Create(result, TotalData);
         }
 
+        public Tuple<List<RoOngoingQcViewModel>, int> GetRoOngoingQc(string keyword = null, string Filter = "{}")
+        {
+            IQueryable<SettingRo> settingRo = dbSet;
+            Dictionary<string, string> FilterDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(Filter);
+
+            Guid id_line = Guid.Empty;
+            bool hasIdLineFilter = FilterDictionary.ContainsKey("id_line") && Guid.TryParse(FilterDictionary["id_line"], out id_line);
+
+            int totalPass = 0;
+            int totalReject = 0;
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+                settingRo = settingRo.Where(entity => entity.rono.Contains(keyword) && entity.IsDeleted == false);
+
+            if (hasIdLineFilter)
+                settingRo = settingRo.Where(entity => entity.id_line == id_line);
+
+            if (hasIdLineFilter && !string.IsNullOrWhiteSpace(keyword))
+            {
+                totalPass = TotalPassPerHariQc(id_line, keyword);
+                totalReject = TotalRejectPerHariQc(id_line, keyword);
+            }
+
+            //var readForSummaryOperator =
+            //    (from a in settingRo
+            //     join b in dbContext.SummaryOperator
+            //     on a.rono equals b.rono
+            //     select b).ToList();
+
+            //var lowestQty = readForSummaryOperator.OrderBy(x => x.jml_pass_per_ro).FirstOrDefault();
+
+            var readForRoOngoingQc =
+                (from a in settingRo
+                 join b in dbContext.SummaryQc
+                 on a.rono equals b.rono into finalData
+                 from resultData in finalData.DefaultIfEmpty()
+                 where resultData.total_pass < a.quantity
+                 //&& resultData.total_pass < lowestQty.jml_pass_per_ro
+                 select new RoOngoingQcViewModel
+                 {
+                     rono = a.rono,
+                     artikel = a.artikel,
+                     jam_target = a.jam_target,
+                     nama_unit = a.nama_unit,
+                     setting_date = a.setting_date,
+                     setting_time = a.setting_time,
+                     smv = a.smv,
+                     total_pass_per_hari = totalPass,
+                     total_reject_per_hari = totalReject,
+                 }
+                 );
+
+            var result = readForRoOngoingQc.ToList();
+            var TotalData = result.Count;
+
+            return Tuple.Create(result, TotalData);
+        }
+
         private int TotalPerHariCount (Guid id_line, string npk)
         {
             return dbSetTransaksiOperator.Where(x => x.id_line == id_line && x.npk == npk && x.CreatedUtc.Date == DateTime.Now.Date).ToList().Count;
+        }
+
+        private int TotalPassPerHariQc (Guid id_line, string ro)
+        {
+            return dbSetTransaksiQc.Where(x => x.id_line == id_line && x.rono == ro && x.CreatedUtc.Date == DateTime.Now.Date && x.pass == true).ToList().Count;
+        }
+
+        private int TotalRejectPerHariQc(Guid id_line, string ro)
+        {
+            return dbSetTransaksiQc.Where(x => x.id_line == id_line && x.rono == ro && x.CreatedUtc.Date == DateTime.Now.Date && x.reject == true).ToList().Count;
         }
     }
 }

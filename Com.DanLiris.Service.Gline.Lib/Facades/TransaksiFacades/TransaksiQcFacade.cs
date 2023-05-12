@@ -19,6 +19,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
         private readonly GlineDbContext dbContext;
         private readonly DbSet<TransaksiQc> dbSet;
         private readonly DbSet<SummaryQc> dbSetSummaryQc;
+        private readonly DbSet<SummaryOperator> dbSetSummaryOpt;
         private readonly DbSet<Rework> dbSetRework;
         public readonly IServiceProvider serviceProvider;
 
@@ -30,6 +31,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             dbSet = dbContext.Set<TransaksiQc>();
             dbSetRework = dbContext.Set<Rework>();
             dbSetSummaryQc = dbContext.Set<SummaryQc>();
+            dbSetSummaryOpt = dbContext.Set<SummaryOperator>();
 
             this.serviceProvider = serviceProvider;
         }
@@ -91,52 +93,93 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
                     this.dbSet.Add(model);
 
                     var summaryQcData = dbSetSummaryQc.Where(i => i.rono == model.rono).FirstOrDefault();
+                    var summaryOptData = dbSetSummaryOpt.Where(i => i.rono == model.rono).ToList();
 
-                    if (summaryQcData == null)
+                    if(summaryOptData != null)
                     {
-                        var summaryQcInsert = GenerateSummaryQc(model, username);
-                        EntityExtension.FlagForCreate(summaryQcInsert, username, USER_AGENT);
+                        //var lowestQty = summaryOptData.OrderBy(x => x.jml_pass_per_ro).FirstOrDefault();
+                        var summaryPerOpt = summaryOptData.Where(x => x.npk == model.npk_reject && x.id_proses == model.id_proses_reject).FirstOrDefault();
 
-                        dbSetSummaryQc.Add(summaryQcInsert);
-
-                        if((bool)model.reject)
-                        {
-                            var reworkInsert = GenerateRework(model, username);
-                            dbSetRework.Add(reworkInsert);
-                        }
-                    }
-                    else
-                    {
-                        if ((summaryQcData.total_pass + 1) > model.quantity)
-                        {
-                            return -1;
-                        }
-
-                        EntityExtension.FlagForUpdate(summaryQcData, username, USER_AGENT);
-                        if ((bool)model.pass)
-                        {
-                            summaryQcData.total_pass++;
-                            dbContext.Update(summaryQcData);
-                        }
-                        else
-                        {
-                            summaryQcData.total_reject++;
-                            var reworkOperator = dbSetRework.Where(i => i.npk == model.npk_reject && i.rono == model.rono && i.id_line == model.id_line).FirstOrDefault();
-
-                            if (reworkOperator != null)
+                        //if (lowestQty.jml_pass_per_ro > 0) 
+                        //{
+                            if (summaryQcData == null)
                             {
-                                reworkOperator.qty_rework++;
-                                EntityExtension.FlagForUpdate(reworkOperator, username, USER_AGENT);
-                                dbContext.Update(reworkOperator);
+                                if ((bool)model.reject)
+                                {
+                                    if(summaryPerOpt != null)
+                                    {
+                                        var reworkInsert = GenerateRework(model, username);
+                                        dbSetRework.Add(reworkInsert);
+
+                                        summaryPerOpt.total_rework++;
+                                        EntityExtension.FlagForUpdate(summaryPerOpt, username, USER_AGENT);
+                                        dbContext.Update(summaryPerOpt);
+                                    }
+                                    else
+                                    {
+                                        return -1;
+                                    }
+                                }
+
+                                var summaryQcInsert = GenerateSummaryQc(model, username);
+                                EntityExtension.FlagForCreate(summaryQcInsert, username, USER_AGENT);
+
+                                dbSetSummaryQc.Add(summaryQcInsert); 
+
                             }
                             else
                             {
-                                var reworkInsert = GenerateRework(model, username);
-                                dbSetRework.Add(reworkInsert);
-                            }
+                                if ((summaryQcData.total_pass + 1) > model.quantity)
+                                {
+                                    return -1;
+                                }
 
-                            dbContext.Update(summaryQcData);
-                        }
+                                EntityExtension.FlagForUpdate(summaryQcData, username, USER_AGENT);
+
+                                if ((bool)model.pass)
+                                {
+                                    summaryQcData.total_pass++;
+                                    dbContext.Update(summaryQcData);
+                                }
+                                else
+                                {
+                                    if (summaryPerOpt != null)
+                                    {
+                                        summaryQcData.total_reject++;
+                                        var reworkOperator = dbSetRework.Where(i => i.npk == model.npk_reject && i.rono == model.rono && i.id_line == model.id_line && i.id_proses == model.id_proses_reject).FirstOrDefault();
+                                        if (reworkOperator != null)
+                                        {
+                                            reworkOperator.qty_rework++;
+                                            EntityExtension.FlagForUpdate(reworkOperator, username, USER_AGENT);
+                                            dbContext.Update(reworkOperator);
+                                        }
+                                        else
+                                        {
+                                            var reworkInsert = GenerateRework(model, username);
+                                            dbSetRework.Add(reworkInsert);
+                                        }
+
+                                        summaryPerOpt.total_rework++;
+                                        dbContext.Update(summaryPerOpt);
+                                        EntityExtension.FlagForUpdate(summaryPerOpt, username, USER_AGENT);
+                                    }
+                                    else
+                                    {
+                                        return -1;
+                                    }
+
+                                    dbContext.Update(summaryQcData);
+                                }
+                            }
+                        //}
+                        //else
+                        //{
+                        //    return -1;
+                        //}
+                    }
+                    else
+                    {
+                        return -1;
                     }
 
                     Modified = await dbContext.SaveChangesAsync();
@@ -179,6 +222,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             rework.nama_line = transaksiQc.nama_line;
             rework.nama_operator = transaksiQc.nama_reject;
             rework.npk = transaksiQc.npk_reject;
+            rework.id_proses = (Guid)transaksiQc.id_proses_reject;
+            rework.nama_proses = transaksiQc.nama_proses_reject;
             rework.qty_rework = 1;
             rework.rono = transaksiQc.rono;
 
