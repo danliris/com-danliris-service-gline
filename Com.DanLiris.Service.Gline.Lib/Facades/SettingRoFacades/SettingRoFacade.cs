@@ -241,20 +241,13 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                     x.IsDeleted == false
                 ).ToList();
 
-            var readForRework = dbSetRework.Where(x =>
-                    (!hasNpkFilter ? true : x.npk == npk) &&
-                    (!hasIdLineFilter ? true : x.id_line == id_line) &&
-                    x.IsDeleted == false
-                ).ToList();
-
             var query =
                 from settingRo in readForRoOngoingOp
                 join summaryOperator in readForSummaryOperator
-                on settingRo.Id equals summaryOperator.id_ro
-                join rework in readForRework on settingRo.Id equals rework.id_ro into finalData
+                on settingRo.Id equals summaryOperator.id_ro into finalData
                 from resultData in finalData.DefaultIfEmpty()
-                where summaryOperator.jml_pass_per_ro < settingRo.quantity
-                || resultData.qty_rework >= 1
+                where resultData.jml_pass_per_ro < settingRo.quantity
+                || resultData.total_rework >= 1
                 select new SettingRo
                 {
                     rono = settingRo.rono,
