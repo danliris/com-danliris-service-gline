@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel
 {
-    public class TransaksiQcCreateModel : BaseViewModel, IValidatableObject
+    public class TransaksiQcCreateModel : BaseCreateModel, IValidatableObject
     {
         public string npk { get; set; }
         public string nama { get; set; }
@@ -18,7 +18,7 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel
         public DateTime setting_date { get; set; }
         public TimeSpan setting_time { get; set; }
         public int quantity { get; set; }
-        public Guid id_proses { get; set; }
+        public Guid? id_proses { get; set; }
         public string nama_proses { get; set; }
         public double cycle_time { get; set; }
         public bool? pass { get; set; }
@@ -27,6 +27,8 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel
         public TimeSpan? reject_time { get; set; }
         public string npk_reject { get; set; }
         public string nama_reject { get; set; }
+        public Guid? id_proses_reject { get; set; }
+        public string nama_proses_reject { get; set; }
         public Guid id_shift { get; set; }
         public string nama_shift { get; set; }
 
@@ -52,7 +54,12 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel
                 yield return new ValidationResult("Rono is required", new List<string> { "rono" });
             }
 
-            if (string.IsNullOrWhiteSpace(nama_proses))
+            if (string.IsNullOrWhiteSpace(nama_proses) && (bool)pass)
+            {
+                yield return new ValidationResult("Nama proses is required", new List<string> { "nama_proses" });
+            }
+
+            if (string.IsNullOrWhiteSpace(nama_proses_reject) && (bool)reject)
             {
                 yield return new ValidationResult("Nama proses is required", new List<string> { "nama_proses" });
             }

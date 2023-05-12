@@ -16,7 +16,7 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel
         public Guid id_setting_ro { get; set; }
         public string rono { get; set; }
         public int quantity { get; set; }
-        public Guid id_proses { get; set; }
+        public Guid? id_proses { get; set; }
         public string nama_proses { get; set; }
         public bool? pass { get; set; }
         public TimeSpan? pass_time { get; set; }
@@ -24,6 +24,8 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel
         public TimeSpan? reject_time { get; set; }
         public string npk_reject { get; set; }
         public string nama_reject { get; set; }
+        public Guid? id_proses_reject { get; set; }
+        public string nama_proses_reject { get; set; }
         public Guid id_shift { get; set; }
         public string nama_shift { get; set; }
 
@@ -49,7 +51,12 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel
                 yield return new ValidationResult("Rono is required", new List<string> { "rono" });
             }
 
-            if (string.IsNullOrWhiteSpace(nama_proses))
+            if (string.IsNullOrWhiteSpace(nama_proses) && (bool)pass)
+            {
+                yield return new ValidationResult("Nama proses is required", new List<string> { "nama_proses" });
+            }
+
+            if (string.IsNullOrWhiteSpace(nama_proses_reject) && (bool)reject)
             {
                 yield return new ValidationResult("Nama proses is required", new List<string> { "nama_proses" });
             }

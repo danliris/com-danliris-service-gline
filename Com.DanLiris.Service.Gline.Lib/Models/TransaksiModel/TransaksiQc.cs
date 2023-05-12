@@ -27,7 +27,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel
         public DateTime setting_date { get; set; }
         public TimeSpan setting_time { get; set; }
         public int quantity { get; set; }
-        public Guid id_proses { get; set; }
+        public Guid? id_proses { get; set; }
         [Required]
         [MaxLength(255)]
         public string nama_proses { get; set; }
@@ -40,6 +40,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel
         public string npk_reject { get; set; }
         [MaxLength(32)]
         public string nama_reject { get; set; }
+        public Guid? id_proses_reject { get; set; }
+        public string nama_proses_reject { get; set; }
         public Guid id_shift { get; set; }
         [Required]
         [MaxLength(32)]
