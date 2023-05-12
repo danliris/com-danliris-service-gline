@@ -1,5 +1,6 @@
 ﻿using Com.DanLiris.Service.Gline.Lib.Helpers.ReadResponse;
 using Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel;
+using Com.DanLiris.Service.Gline.Lib.ViewModels;
 using Com.DanLiris.Service.Gline.Lib.ViewModels.IntegrationViewModel;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Interfaces
         Task<int> Update(Guid id, SettingRo model, string user);
         int Delete(Guid id, string username);
         ReadResponse<object> GetRoLoader(int Page = 1, int Size = 25, string Order = "{}", string Keyword = null, string Filter = "{}");
-        Tuple<List<SettingRo>, int> GetRoOngoingOp(string keyword = null, string Filter = "{}");
+        Tuple<List<RoOngoingViewModel>, int> GetRoOngoingOp(string keyword = null, string Filter = "{}");
     }
 }

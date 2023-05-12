@@ -4,6 +4,7 @@ using Com.DanLiris.Service.Gline.Lib.Interfaces;
 using Com.DanLiris.Service.Gline.Lib.Models.ReworkModel;
 using Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel;
 using Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel;
+using Com.DanLiris.Service.Gline.Lib.ViewModels;
 using Com.DanLiris.Service.Gline.Lib.ViewModels.IntegrationViewModel;
 using Com.Moonlay.Models;
 using Com.Moonlay.NetCore.Lib;
@@ -23,6 +24,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
         private readonly GlineDbContext dbContext;
         private ISalesDbContext salesDbContext;
         private readonly DbSet<SettingRo> dbSet;
+        private readonly DbSet<TransaksiOperator> dbSetTransaksiOperator;
         private readonly DbSet<SummaryOperator> dbSetSummaryOperator;
         private readonly DbSet<Rework> dbSetRework;
         public readonly IServiceProvider serviceProvider;
@@ -34,6 +36,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             this.dbContext = dbContext;
             this.salesDbContext = salesDbContext;
             this.dbSet = dbContext.Set<SettingRo>();
+            this.dbSetTransaksiOperator = dbContext.Set<TransaksiOperator>();
             this.dbSetSummaryOperator = dbContext.Set<SummaryOperator>();
             this.dbSetRework = dbContext.Set<Rework>();
             this.serviceProvider = serviceProvider;
@@ -212,7 +215,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             return new ReadResponse<object>(ListData, TotalData, OrderDictionary);
         }
 
-        public Tuple<List<SettingRo>, int> GetRoOngoingOp(string keyword = null, string Filter = "{}")
+        public Tuple<List<RoOngoingViewModel>, int> GetRoOngoingOp(string keyword = null, string Filter = "{}")
         {
             IQueryable<SettingRo> Query = dbSet;
             Dictionary<string, string> FilterDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(Filter);
@@ -220,12 +223,18 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             Guid id_line = Guid.Empty;
             string npk = "";
             Guid id_proses = Guid.Empty;
+            int totalPerHari = 0;
 
             bool hasIdLineFilter = FilterDictionary.ContainsKey("id_line") && Guid.TryParse(FilterDictionary["id_line"], out id_line);
             bool hasNpkFilter = FilterDictionary.ContainsKey("npk") && !String.IsNullOrWhiteSpace(FilterDictionary["npk"]);
             bool hasIdProsesFilter = FilterDictionary.ContainsKey("id_proses") && Guid.TryParse(FilterDictionary["id_proses"], out id_proses);
 
             npk = hasNpkFilter ? FilterDictionary["npk"] : "";
+
+            if (hasIdLineFilter && hasNpkFilter)
+            {
+                totalPerHari = TotalPerHariCount(id_line, npk);
+            }
 
             if (!string.IsNullOrWhiteSpace(keyword))
                 Query = Query.Where(entity => entity.rono.Contains(keyword));
@@ -248,21 +257,30 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                 from resultData in finalData.DefaultIfEmpty()
                 where resultData.jml_pass_per_ro < settingRo.quantity
                 || resultData.total_rework >= 1
-                select new SettingRo
-                {
-                    rono = settingRo.rono,
-                    jam_target = settingRo.jam_target,
-                    smv = settingRo.smv,
-                    artikel = settingRo.artikel,
-                    setting_date = settingRo.setting_date,
-                    setting_time = settingRo.setting_time,
-                    nama_unit = settingRo.nama_unit
-                };
+                select new RoOngoingViewModel
+                (
+                    settingRo.rono,
+                    settingRo.jam_target,
+                    settingRo.smv,
+                    settingRo.artikel,
+                    settingRo.setting_date,
+                    settingRo.setting_time,
+                    settingRo.nama_unit,
+                    resultData.jml_pass_per_ro,
+                    totalPerHari,
+                    resultData.total_rework,
+                    resultData.total_waktu_pengerjaan
+                );
 
             var result = query.ToList();
             var TotalData = result.Count;
 
             return Tuple.Create(result, TotalData);
+        }
+
+        private int TotalPerHariCount (Guid id_line, string npk)
+        {
+            return dbSetTransaksiOperator.Where(x => x.id_line == id_line && x.npk == npk && x.CreatedUtc.Date == DateTime.Now.Date).ToList().Count;
         }
     }
 }

@@ -122,13 +122,17 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
                 List<object> listData = new List<object>();
                 listData.AddRange(Data.Item1.AsQueryable().Select(s => new
                 {
-                    s.rono,
-                    s.jam_target,
-                    s.smv,
-                    s.artikel,
-                    s.setting_date,
-                    s.setting_time,
-                    s.nama_unit
+                    s._rono,
+                    s._jam_target,
+                    s._smv,
+                    s._artikel,
+                    s._setting_date,
+                    s._setting_time,
+                    s._nama_unit,
+                    s._total_output_ro,
+                    s._total_output_hari,
+                    s._total_rework,
+                    s._total_pengerjaan
                 }));
 
                 return Ok(new
