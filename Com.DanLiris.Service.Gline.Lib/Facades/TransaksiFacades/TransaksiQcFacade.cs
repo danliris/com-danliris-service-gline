@@ -1,5 +1,6 @@
 ﻿using Com.DanLiris.Service.Gline.Lib.Helpers;
 using Com.DanLiris.Service.Gline.Lib.Interfaces;
+using Com.DanLiris.Service.Gline.Lib.Models.ReworkModel;
 using Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel;
 using Com.Moonlay.Models;
 using Com.Moonlay.NetCore.Lib;
@@ -17,6 +18,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
     {
         private readonly GlineDbContext dbContext;
         private readonly DbSet<TransaksiQc> dbSet;
+        private readonly DbSet<SummaryQc> dbSetSummaryQc;
+        private readonly DbSet<Rework> dbSetRework;
         public readonly IServiceProvider serviceProvider;
 
         private string USER_AGENT = "Facade";
@@ -24,7 +27,10 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
         public TransaksiQcFacade(GlineDbContext dbContext, IServiceProvider serviceProvider)
         {
             this.dbContext = dbContext;
-            this.dbSet = dbContext.Set<TransaksiQc>();
+            dbSet = dbContext.Set<TransaksiQc>();
+            dbSetRework = dbContext.Set<Rework>();
+            dbSetSummaryQc = dbContext.Set<SummaryQc>();
+
             this.serviceProvider = serviceProvider;
         }
 
@@ -74,15 +80,66 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
 
         public async Task<int> Create(TransaksiQc model, string username)
         {
-            int Created = 0;
+            int Modified = 0;
 
             using (var transaction = this.dbContext.Database.BeginTransaction())
             {
                 try
                 {
+                    model.Id = Guid.NewGuid();
                     EntityExtension.FlagForCreate(model, username, USER_AGENT);
                     this.dbSet.Add(model);
-                    Created = await dbContext.SaveChangesAsync();
+
+                    var summaryQcData = dbSetSummaryQc.Where(i => i.rono == model.rono).FirstOrDefault();
+
+                    if (summaryQcData == null)
+                    {
+                        var summaryQcInsert = GenerateSummaryQc(model, username);
+                        EntityExtension.FlagForCreate(summaryQcInsert, username, USER_AGENT);
+
+                        dbSetSummaryQc.Add(summaryQcInsert);
+
+                        if((bool)model.reject)
+                        {
+                            var reworkInsert = GenerateRework(model, username);
+                            dbSetRework.Add(reworkInsert);
+                        }
+                    }
+                    else
+                    {
+                        if ((summaryQcData.total_pass + 1) > model.quantity)
+                        {
+                            return -1;
+                        }
+
+                        EntityExtension.FlagForUpdate(summaryQcData, username, USER_AGENT);
+                        if ((bool)model.pass)
+                        {
+                            summaryQcData.total_pass++;
+                            dbContext.Update(summaryQcData);
+                        }
+                        else
+                        {
+                            summaryQcData.total_reject++;
+                            var reworkOperator = dbSetRework.Where(i => i.npk == model.npk_reject && i.rono == model.rono && i.id_line == model.id_line).FirstOrDefault();
+
+                            if (reworkOperator != null)
+                            {
+                                reworkOperator.qty_rework++;
+                                EntityExtension.FlagForUpdate(reworkOperator, username, USER_AGENT);
+                                dbContext.Update(reworkOperator);
+                            }
+                            else
+                            {
+                                var reworkInsert = GenerateRework(model, username);
+                                dbSetRework.Add(reworkInsert);
+                            }
+
+                            dbContext.Update(summaryQcData);
+                        }
+                    }
+
+                    Modified = await dbContext.SaveChangesAsync();
                     transaction.Commit();
                 }
                 catch (Exception e)
@@ -93,7 +150,39 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
                 }
             }
 
-            return Created;
+            return Modified;
+        }
+
+        private SummaryQc GenerateSummaryQc(TransaksiQc transaksiQc, string username)
+        {
+            var summaryQc = new SummaryQc();
+            EntityExtension.FlagForCreate(summaryQc, username, USER_AGENT);
+
+            summaryQc.nama = transaksiQc.nama;
+            summaryQc.npk = transaksiQc.npk;
+            summaryQc.total_pass = (bool)transaksiQc.pass ? 1 : 0;
+            summaryQc.total_reject = (bool)transaksiQc.reject ? 1 : 0;
+            summaryQc.rono = transaksiQc.rono;
+            summaryQc.setting_date = transaksiQc.setting_date;
+            summaryQc.setting_time = transaksiQc.setting_time;
+
+            return summaryQc;
+        }
+
+        private Rework GenerateRework(TransaksiQc transaksiQc, string username)
+        {
+            var rework = new Rework();
+            EntityExtension.FlagForCreate(rework, username, USER_AGENT);
+
+            rework.id_line = transaksiQc.id_line;
+            rework.id_ro = transaksiQc.id_setting_ro;
+            rework.nama_line = transaksiQc.nama_line;
+            rework.nama_operator = transaksiQc.nama_reject;
+            rework.npk = transaksiQc.npk_reject;
+            rework.qty_rework = 1;
+            rework.rono = transaksiQc.rono;
+
+            return rework;
         }
 
     }

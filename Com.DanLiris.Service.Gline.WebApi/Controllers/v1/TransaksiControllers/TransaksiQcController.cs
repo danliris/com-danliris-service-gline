@@ -97,12 +97,19 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
 
             try
             {
-                viewModel.Id = Guid.NewGuid().ToString();
                 validateService.Validate(viewModel);
 
                 TransaksiQc model = mapper.Map<TransaksiQc>(viewModel);
 
                 int result = await facade.Create(model, identityService.Username);
+
+                if (result == -1)
+                {
+                    Dictionary<string, object> ErrorResult =
+                        new ResultFormatter(ApiVersion, General.BAD_REQUEST_STATUS_CODE, General.QUANTITY_OVERFLOW)
+                        .Fail();
+                    return BadRequest(ErrorResult);
+                }
 
                 Dictionary<string, object> Result =
                     new ResultFormatter(ApiVersion, General.CREATED_STATUS_CODE, General.OK_MESSAGE)
