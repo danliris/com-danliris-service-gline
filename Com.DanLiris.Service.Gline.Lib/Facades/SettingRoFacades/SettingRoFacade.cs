@@ -1,7 +1,9 @@
 ﻿using Com.DanLiris.Service.Gline.Lib.Helpers;
 using Com.DanLiris.Service.Gline.Lib.Helpers.ReadResponse;
 using Com.DanLiris.Service.Gline.Lib.Interfaces;
+using Com.DanLiris.Service.Gline.Lib.Models.ReworkModel;
 using Com.DanLiris.Service.Gline.Lib.Models.SettingRoModel;
+using Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel;
 using Com.DanLiris.Service.Gline.Lib.ViewModels.IntegrationViewModel;
 using Com.Moonlay.Models;
 using Com.Moonlay.NetCore.Lib;
@@ -21,6 +23,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
         private readonly GlineDbContext dbContext;
         private ISalesDbContext salesDbContext;
         private readonly DbSet<SettingRo> dbSet;
+        private readonly DbSet<SummaryOperator> dbSetSummaryOperator;
+        private readonly DbSet<Rework> dbSetRework;
         public readonly IServiceProvider serviceProvider;
 
         private string USER_AGENT = "Facade";
@@ -30,6 +34,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             this.dbContext = dbContext;
             this.salesDbContext = salesDbContext;
             this.dbSet = dbContext.Set<SettingRo>();
+            this.dbSetSummaryOperator = dbContext.Set<SummaryOperator>();
+            this.dbSetRework = dbContext.Set<Rework>();
             this.serviceProvider = serviceProvider;
         }
 
@@ -204,6 +210,66 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
 
 
             return new ReadResponse<object>(ListData, TotalData, OrderDictionary);
+        }
+
+        public Tuple<List<SettingRo>, int> GetRoOngoingOp(string keyword = null, string Filter = "{}")
+        {
+            IQueryable<SettingRo> Query = dbSet;
+            Dictionary<string, string> FilterDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(Filter);
+
+            Guid id_line = Guid.Empty;
+            string npk = "";
+            Guid id_proses = Guid.Empty;
+
+            bool hasIdLineFilter = FilterDictionary.ContainsKey("id_line") && Guid.TryParse(FilterDictionary["id_line"], out id_line);
+            bool hasNpkFilter = FilterDictionary.ContainsKey("npk") && !String.IsNullOrWhiteSpace(FilterDictionary["npk"]);
+            bool hasIdProsesFilter = FilterDictionary.ContainsKey("id_proses") && Guid.TryParse(FilterDictionary["id_proses"], out id_proses);
+
+            npk = hasNpkFilter ? FilterDictionary["npk"] : "";
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+                Query = Query.Where(entity => entity.rono.Contains(keyword));
+
+            var readForRoOngoingOp = Query.Where(x =>
+                    (!hasIdLineFilter ? true : x.id_line == id_line) &&
+                    x.IsDeleted == false
+                ).ToList();
+
+            var readForSummaryOperator = dbSetSummaryOperator.Where(x =>
+                    (!hasNpkFilter ? true : x.npk == npk) &&
+                    (!hasIdProsesFilter ? true : x.id_proses == id_proses) &&
+                    x.IsDeleted == false
+                ).ToList();
+
+            var readForRework = dbSetRework.Where(x =>
+                    (!hasNpkFilter ? true : x.npk == npk) &&
+                    (!hasIdLineFilter ? true : x.id_line == id_line) &&
+                    x.IsDeleted == false
+                ).ToList();
+
+            var query =
+                from settingRo in readForRoOngoingOp
+                join summaryOperator in readForSummaryOperator
+                on settingRo.Id equals summaryOperator.id_ro
+                join rework in readForRework on settingRo.Id equals rework.id_ro into finalData
+                from resultData in finalData.DefaultIfEmpty()
+                where summaryOperator.jml_pass_per_ro < settingRo.quantity
+                || resultData.qty_rework >= 1
+                select new SettingRo
+                {
+                    rono = settingRo.rono,
+                    jam_target = settingRo.jam_target,
+                    smv = settingRo.smv,
+                    artikel = settingRo.artikel,
+                    setting_date = settingRo.setting_date,
+                    setting_time = settingRo.setting_time,
+                    nama_unit = settingRo.nama_unit
+                };
+
+            var result = query.ToList();
+            var TotalData = result.Count;
+
+            return Tuple.Create(result, TotalData);
         }
     }
 }
