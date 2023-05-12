@@ -19,5 +19,9 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.ReworkModel
         public string rono { get; set; }
         public Guid id_line { get; set; }
         public int nama_line { get; set; }
+        public Guid id_proses { get; set; }
+        [Required]
+        [MaxLength(255)]
+        public string nama_proses { get; set; }
     }
 }

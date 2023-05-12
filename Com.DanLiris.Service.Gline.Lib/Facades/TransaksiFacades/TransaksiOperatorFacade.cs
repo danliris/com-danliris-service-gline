@@ -18,7 +18,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
         private readonly GlineDbContext dbContext;
         private readonly DbSet<TransaksiOperator> dbSet;
         private readonly DbSet<SummaryOperator> dbSetSummaryOperator;
-        private readonly DbSet<ReworkTime> dbSetReworkTime;
         public readonly IServiceProvider serviceProvider;
 
         private string USER_AGENT = "Facade";
@@ -28,7 +27,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             this.dbContext = dbContext;
             dbSet = dbContext.Set<TransaksiOperator>();
             dbSetSummaryOperator = dbContext.Set<SummaryOperator>();
-            dbSetReworkTime = dbContext.Set<ReworkTime>();
             this.serviceProvider = serviceProvider;
         }
 
