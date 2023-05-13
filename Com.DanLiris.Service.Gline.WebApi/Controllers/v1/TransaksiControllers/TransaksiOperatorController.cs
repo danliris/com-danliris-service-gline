@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Com.DanLiris.Service.Gline.Lib.Interfaces;
+using Com.DanLiris.Service.Gline.Lib.Models.ReworkModel;
 using Com.DanLiris.Service.Gline.Lib.Models.TransaksiModel;
 using Com.DanLiris.Service.Gline.Lib.Services;
+using Com.DanLiris.Service.Gline.Lib.ViewModels.ReworkViewModel;
 using Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel;
 using Com.DanLiris.Service.Gline.WebApi.Helpers;
 using Com.Moonlay.NetCore.Lib.Service;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -105,6 +108,53 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
                         new ResultFormatter(ApiVersion, General.BAD_REQUEST_STATUS_CODE, General.QUANTITY_OVERFLOW)
                         .Fail();
                     return BadRequest(ErrorResult);
+                }
+
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.CREATED_STATUS_CODE, General.OK_MESSAGE)
+                    .Ok();
+                return Created(String.Concat(Request.Path, "/", 0), Result);
+            }
+            catch (ServiceValidationExeption e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.BAD_REQUEST_STATUS_CODE, General.BAD_REQUEST_MESSAGE)
+                    .Fail(e);
+                return BadRequest(Result);
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
+        [HttpPost("rework")]
+        public async Task<IActionResult> AddRework([FromBody] ReworkTimeCreateModel createModel, [Required] string npk, [Required] Guid id_ro, [Required] Guid id_line, [Required] Guid id_proses)
+        {
+            identityService.Token = Request.Headers["Authorization"].First().Replace("Bearer ", "");
+            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
+
+            IValidateService validateService = (IValidateService)serviceProvider.GetService(typeof(IValidateService));
+
+            try
+            {
+                ReworkTime model = new ReworkTime
+                {
+                    jam_awal = createModel.jam_awal,
+                    jam_akhir = createModel.jam_akhir
+                };
+
+                int result = await facade.DoRework(model, identityService.Username, npk, id_ro, id_line, id_proses);
+
+                if (result == -1)
+                {
+                    Dictionary<string, object> ErrorResult =
+                        new ResultFormatter(ApiVersion, General.NOT_FOUND_STATUS_CODE, General.NOT_FOUND_MESSAGE)
+                        .Fail();
+                    return NotFound(ErrorResult);
                 }
 
                 Dictionary<string, object> Result =

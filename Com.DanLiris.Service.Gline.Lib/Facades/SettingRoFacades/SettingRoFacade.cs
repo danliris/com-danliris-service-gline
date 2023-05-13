@@ -269,7 +269,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                     resultData.jml_pass_per_ro,
                     totalPerHari,
                     resultData.total_rework,
-                    resultData.total_waktu_pengerjaan
+                    resultData.total_waktu_pengerjaan.TotalSeconds
                 );
 
             var result = query.ToList();

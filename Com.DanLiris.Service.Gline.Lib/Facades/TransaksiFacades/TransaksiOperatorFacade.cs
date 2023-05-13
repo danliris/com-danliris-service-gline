@@ -18,6 +18,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
         private readonly GlineDbContext dbContext;
         private readonly DbSet<TransaksiOperator> dbSet;
         private readonly DbSet<SummaryOperator> dbSetSummaryOperator;
+        private readonly DbSet<Rework> dbSetRework;
+        private readonly DbSet<ReworkTime> dbSetReworkTime;
         public readonly IServiceProvider serviceProvider;
 
         private string USER_AGENT = "Facade";
@@ -27,6 +29,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             this.dbContext = dbContext;
             dbSet = dbContext.Set<TransaksiOperator>();
             dbSetSummaryOperator = dbContext.Set<SummaryOperator>();
+            dbSetRework = dbContext.Set<Rework>();
+            dbSetReworkTime = dbContext.Set<ReworkTime>();
             this.serviceProvider = serviceProvider;
         }
 
@@ -116,7 +120,56 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             return Modified;
         }
 
-        private SummaryOperator GenerateSummaryOperator(TransaksiOperator transaksiOperator, string username)
+        public async Task<int> DoRework(ReworkTime model, string username, string npk, Guid id_ro, Guid id_line, Guid id_proses)
+        {
+            int Modified = 0;
+
+            using (var transaction = this.dbContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    var readForRework = dbSetRework.Where(x => x.npk == npk && x.id_ro == id_ro && x.id_line == id_line && x.id_proses == id_proses).FirstOrDefault();
+                    var readForSummaryOperator = dbSetSummaryOperator.Where(x => x.npk == npk && x.id_ro == id_ro && x.id_proses == id_proses).FirstOrDefault();
+
+                    if (readForRework != null && readForSummaryOperator != null)
+                    {
+                        model.Id = Guid.NewGuid();
+                        model.npk = npk;
+                        model.nama_operator = readForRework.nama_operator;
+                        model.id_rework = readForRework.Id;
+                        EntityExtension.FlagForCreate(model, username, USER_AGENT);
+                        dbSetReworkTime.Add(model);
+
+                        EntityExtension.FlagForUpdate(readForSummaryOperator, username, USER_AGENT);
+                        readForSummaryOperator.total_rework--;
+                        readForSummaryOperator.total_waktu_pengerjaan += model.jam_akhir.Subtract(model.jam_awal);
+                        dbContext.Update(readForSummaryOperator);
+
+                        EntityExtension.FlagForUpdate(readForRework, username, USER_AGENT);
+                        readForRework.qty_rework--;
+                        dbContext.Update(readForRework);
+
+                        Modified = await dbContext.SaveChangesAsync();
+                        transaction.Commit();
+                    }
+                    else
+                    {
+                        return -1;
+                    }
+                }
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                    while (e.InnerException != null) e = e.InnerException;
+                    throw e;
+                }
+            }
+
+            return Modified;
+        }
+
+
+            private SummaryOperator GenerateSummaryOperator(TransaksiOperator transaksiOperator, string username)
         {
             var summaryOperator = new SummaryOperator();
             EntityExtension.FlagForCreate(summaryOperator, username, USER_AGENT);
