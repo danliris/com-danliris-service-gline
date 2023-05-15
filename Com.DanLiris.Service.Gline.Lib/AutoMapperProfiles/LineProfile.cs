@@ -14,6 +14,10 @@ namespace Com.DanLiris.Service.Gline.Lib.AutoMapperProfiles
             CreateMap<Line, LineViewModel>()
                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
                .ReverseMap();
+
+            CreateMap<LineCreateModel, Line>()
+             .ForMember(d => d.Id, opt => opt.Ignore())
+             .ReverseMap();
         }
     }
 }

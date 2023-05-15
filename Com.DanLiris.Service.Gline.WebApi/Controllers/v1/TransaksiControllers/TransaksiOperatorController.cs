@@ -25,17 +25,24 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
     {
         private readonly string ApiVersion = "1.0.0";
 
-        private readonly IServiceProvider serviceProvider;
-        private readonly IdentityService identityService;
-        private readonly IMapper mapper;
-        private readonly ITransaksiOperatorFacade facade;
+        private readonly IdentityService _identityService;
+        private readonly IMapper _mapper;
+        private readonly ITransaksiOperatorFacade _facade;
+        private readonly IValidateService _validateService;
 
         public TransaksiOperatorController(IServiceProvider serviceProvider, ITransaksiOperatorFacade facade, IMapper mapper)
         {
-            this.serviceProvider = serviceProvider;
-            this.mapper = mapper;
-            this.facade = facade;
-            identityService = (IdentityService)serviceProvider.GetService(typeof(IdentityService));
+            _mapper = mapper;
+            _facade = facade;
+            _identityService = (IdentityService)serviceProvider.GetService(typeof(IdentityService));
+            _validateService = (IValidateService)serviceProvider.GetService(typeof(IValidateService));
+        }
+
+        private void VerifyUser()
+        {
+            _identityService.Username = User.Claims.ToArray().SingleOrDefault(p => p.Type.Equals("username")).Value;
+            _identityService.Token = Request.Headers["Authorization"].FirstOrDefault().Replace("Bearer ", "");
+            _identityService.TimezoneOffset = Convert.ToInt32(Request.Headers["x-timezone-offset"]);
         }
 
         [HttpGet]
@@ -43,8 +50,8 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
         {
             try
             {
-                var Data = facade.Read(page, size, order, keyword, filter);
-                var newData = mapper.Map<List<TransaksiOperatorViewModel>>(Data.Item1);
+                var Data = _facade.Read(page, size, order, keyword, filter);
+                var newData = _mapper.Map<List<TransaksiOperatorViewModel>>(Data.Item1);
 
                 List<object> listData = new List<object>();
                 listData.AddRange(newData.AsQueryable().Select(s => new
@@ -87,22 +94,19 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] TransaksiOperatorCreateModel viewModel)
+        public async Task<IActionResult> Post([FromBody] TransaksiOperatorCreateModel createModel)
         {
-            identityService.Token = Request.Headers["Authorization"].First().Replace("Bearer ", "");
-            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
-
-            IValidateService validateService = (IValidateService)serviceProvider.GetService(typeof(IValidateService));
+            VerifyUser();
 
             try
             {
-                validateService.Validate(viewModel);
+                _validateService.Validate(createModel);
 
-                TransaksiOperator model = mapper.Map<TransaksiOperator>(viewModel);
+                TransaksiOperator model = _mapper.Map<TransaksiOperator>(createModel);
 
-                int result = await facade.Create(model, identityService.Username);
+                var result = await _facade.Create(model, _identityService.Username);
 
-                if (result == -1)
+                if (result.roOverflow == true)
                 {
                     Dictionary<string, object> ErrorResult =
                         new ResultFormatter(ApiVersion, General.BAD_REQUEST_STATUS_CODE, General.QUANTITY_OVERFLOW)
@@ -110,10 +114,10 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
                     return BadRequest(ErrorResult);
                 }
 
-                Dictionary<string, object> Result =
-                    new ResultFormatter(ApiVersion, General.CREATED_STATUS_CODE, General.OK_MESSAGE)
-                    .Ok();
-                return Created(String.Concat(Request.Path, "/", 0), Result);
+                //Dictionary<string, object> Result =
+                //    new ResultFormatter(ApiVersion, General.CREATED_STATUS_CODE, General.OK_MESSAGE)
+                //    .Ok();
+                return CreatedAtAction(nameof(Get), result);
             }
             catch (ServiceValidationExeption e)
             {
@@ -134,10 +138,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
         [HttpPost("rework")]
         public async Task<IActionResult> AddRework([FromBody] ReworkTimeCreateModel createModel, [Required] string npk, [Required] Guid id_ro, [Required] Guid id_line, [Required] Guid id_proses)
         {
-            identityService.Token = Request.Headers["Authorization"].First().Replace("Bearer ", "");
-            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
-
-            IValidateService validateService = (IValidateService)serviceProvider.GetService(typeof(IValidateService));
+            VerifyUser();
 
             try
             {
@@ -147,7 +148,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
                     jam_akhir = createModel.jam_akhir
                 };
 
-                int result = await facade.DoRework(model, identityService.Username, npk, id_ro, id_line, id_proses);
+                int result = await _facade.DoRework(model, _identityService.Username, npk, id_ro, id_line, id_proses);
 
                 if (result == -1)
                 {

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -74,10 +75,10 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             return Tuple.Create(Data, TotalData, OrderDictionary);
         }
 
-        public async Task<int> Create(TransaksiOperator model, string username)
+        public async Task<dynamic> Create(TransaksiOperator model, string username)
         {
-            int Modified = 0;
-
+            dynamic returnResult = new ExpandoObject();
+            returnResult.roOverflow = false;
             using (var transaction = this.dbContext.Database.BeginTransaction())
             {
                 try
@@ -92,21 +93,29 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
                     {
                         var summaryOperatorInsert = GenerateSummaryOperator(model, username);
                         dbSetSummaryOperator.Add(summaryOperatorInsert);
-                       
+
+                        returnResult.npk = summaryOperatorInsert.npk;
+                        returnResult.jml_pass_per_ro = summaryOperatorInsert.jml_pass_per_ro;
+                        returnResult.jml_pass_per_hari = 1;
                     }
                     else
                     {
                         if ((summaryOperatorData.jml_pass_per_ro + 1) > model.quantity)
                         {
-                            return -1;
+                            returnResult.roOverflow = true;
+                            return returnResult;
                         }
                         EntityExtension.FlagForUpdate(summaryOperatorData, username, USER_AGENT);
                         summaryOperatorData.jml_pass_per_ro++;
-                        
+
+                        returnResult.npk = summaryOperatorData.npk;
+                        returnResult.jml_pass_per_ro = summaryOperatorData.jml_pass_per_ro;
+                        returnResult.jml_pass_per_hari = TotalPerHariCount(model.id_line, model.npk);
+
                         dbContext.Update(summaryOperatorData);
                     }
 
-                    Modified = await dbContext.SaveChangesAsync();
+                    await dbContext.SaveChangesAsync();
                     transaction.Commit();
                 }
                 catch (Exception e)
@@ -116,8 +125,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
                     throw e;
                 }
             }
-
-            return Modified;
+            return returnResult;
         }
 
         public async Task<int> DoRework(ReworkTime model, string username, string npk, Guid id_ro, Guid id_line, Guid id_proses)
@@ -187,7 +195,10 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             return summaryOperator;
         }
 
-
+        private int TotalPerHariCount(Guid id_line, string npk)
+        {
+            return dbSet.Where(x => x.id_line == id_line && x.npk == npk && x.CreatedUtc.Date == DateTime.Now.Date).ToList().Count;
+        }
 
     }
 }

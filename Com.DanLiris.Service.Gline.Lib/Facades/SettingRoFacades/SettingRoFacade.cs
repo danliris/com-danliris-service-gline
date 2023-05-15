@@ -48,7 +48,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
 
             List<string> searchAttributes = new List<string>()
             {
-                "ro", "nama_gedung", "nama_unit"
+                "rono", "nama_gedung", "nama_unit"
             };
 
             Query = QueryHelper<SettingRo>.ConfigureSearch(Query, searchAttributes, Keyword);
@@ -250,32 +250,50 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                     x.IsDeleted == false
                 ).ToList();
 
-            var query =
-                from settingRo in readForRoOngoingOp
-                join summaryOperator in readForSummaryOperator
-                on settingRo.Id equals summaryOperator.id_ro into finalData
-                from resultData in finalData.DefaultIfEmpty()
-                where resultData.jml_pass_per_ro < settingRo.quantity
-                || resultData.total_rework >= 1
-                select new RoOngoingViewModel
-                (
-                    settingRo.rono,
-                    settingRo.jam_target,
-                    settingRo.smv,
-                    settingRo.artikel,
-                    settingRo.setting_date,
-                    settingRo.setting_time,
-                    settingRo.nama_unit,
-                    resultData.jml_pass_per_ro,
-                    totalPerHari,
-                    resultData.total_rework,
-                    resultData.total_waktu_pengerjaan.TotalSeconds
-                );
+            if (readForSummaryOperator.Count > 0)
+            {
+                var queryJoin =
+                    from settingRo in readForRoOngoingOp
+                    join summaryOperator in readForSummaryOperator
+                    on settingRo.Id equals summaryOperator.id_ro into finalData
+                    from resultData in finalData.DefaultIfEmpty()
+                    where resultData.jml_pass_per_ro < settingRo.quantity
+                    || resultData.total_rework >= 1
+                    select new RoOngoingViewModel
+                    (
+                        settingRo.rono,
+                        settingRo.jam_target,
+                        settingRo.smv,
+                        settingRo.artikel,
+                        settingRo.setting_date,
+                        settingRo.setting_time,
+                        settingRo.nama_unit,
+                        resultData.jml_pass_per_ro,
+                        totalPerHari,
+                        resultData.total_rework,
+                        resultData.total_waktu_pengerjaan.TotalSeconds
+                    );
 
-            var result = query.ToList();
-            var TotalData = result.Count;
+                var result = queryJoin.ToList();
 
-            return Tuple.Create(result, TotalData);
+                return Tuple.Create(result, result.Count);
+            }
+
+            var query = readForRoOngoingOp.Select(x => new RoOngoingViewModel(
+                    x.rono,
+                    x.jam_target,
+                    x.smv,
+                    x.artikel,
+                    x.setting_date,
+                    x.setting_time,
+                    x.nama_unit,
+                    0,
+                    0,
+                    0,
+                    0
+                )).ToList();
+
+            return Tuple.Create(query, query.Count);
         }
 
         private int TotalPerHariCount (Guid id_line, string npk)
