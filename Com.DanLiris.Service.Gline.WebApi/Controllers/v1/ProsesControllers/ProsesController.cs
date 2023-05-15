@@ -129,15 +129,15 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] ProsesViewModel viewModel)
+        public async Task<IActionResult> Post([FromBody] ProsesCreateModel createModel)
         {
             VerifyUser();
 
             try
             {
-                _validateService.Validate(viewModel);
+                _validateService.Validate(createModel);
 
-                Proses model = _mapper.Map<Proses>(viewModel);
+                Proses model = _mapper.Map<Proses>(createModel);
 
                 int result = await _facade.Create(model, _identityService.Username);
 
@@ -166,8 +166,6 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
         public async Task<IActionResult> Put([FromRoute] string id, [FromBody] ProsesViewModel viewModel)
         {
             VerifyUser();
-
-           
 
             try
             {
