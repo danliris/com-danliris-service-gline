@@ -13,6 +13,10 @@ namespace Com.DanLiris.Service.Gline.Lib.AutoMapperProfiles
             CreateMap<Proses, ProsesViewModel>()
                 .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
                 .ReverseMap();
+
+            CreateMap<ProsesCreateModel, Proses>()
+              .ForMember(d => d.Id, opt => opt.Ignore())
+              .ReverseMap();
         }
     }
 }

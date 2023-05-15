@@ -79,6 +79,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ProsesFacades
             {
                 try
                 {
+                    model.Id = Guid.NewGuid();
                     EntityExtension.FlagForCreate(model, username, USER_AGENT);
                     this.dbSet.Add(model);
                     Created = await dbContext.SaveChangesAsync();

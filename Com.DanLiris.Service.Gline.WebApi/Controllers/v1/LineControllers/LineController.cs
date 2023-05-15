@@ -25,20 +25,27 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
     {
         private readonly string ApiVersion = "1.0.0";
 
-        private readonly IServiceProvider serviceProvider;
-        private readonly IdentityService identityService;
-        private readonly IMapper mapper;
-        private readonly ILineFacade facade;
+        private readonly IdentityService _identityService;
+        private readonly IMapper _mapper;
+        private readonly ILineFacade _facade;
+        private readonly IValidateService _validateService;
 
         private readonly string ContentType = "application/vnd.openxmlformats";
         private readonly string FileName = string.Concat("Error Log - Upload Line - ", DateTime.Now.ToString("dd MMM yyyy"), ".csv");
 
         public LineController(IServiceProvider serviceProvider, ILineFacade facade, IMapper mapper)
         {
-            this.serviceProvider = serviceProvider;
-            this.mapper = mapper;
-            this.facade = facade;
-            identityService = (IdentityService)serviceProvider.GetService(typeof(IdentityService));
+            _mapper = mapper;
+            _facade = facade;
+            _identityService = (IdentityService)serviceProvider.GetService(typeof(IdentityService));
+            _validateService = (IValidateService)serviceProvider.GetService(typeof(IValidateService));
+        }
+
+        private void VerifyUser()
+        {
+            _identityService.Username = User.Claims.ToArray().SingleOrDefault(p => p.Type.Equals("username")).Value;
+            _identityService.Token = Request.Headers["Authorization"].FirstOrDefault().Replace("Bearer ", "");
+            _identityService.TimezoneOffset = Convert.ToInt32(Request.Headers["x-timezone-offset"]);
         }
 
         [HttpGet]
@@ -46,8 +53,8 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
         {
             try
             {
-                var Data = facade.Read(page, size, order, keyword, filter);
-                var newData = mapper.Map<List<LineViewModel>>(Data.Item1);
+                var Data = _facade.Read(page, size, order, keyword, filter);
+                var newData = _mapper.Map<List<LineViewModel>>(Data.Item1);
 
                 List<object> listData = new List<object>();
                 listData.AddRange(newData.AsQueryable().Select(s => new
@@ -85,15 +92,24 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult Get(Guid id)
+        public IActionResult Get(string id)
         {
             try
             {
-                var result = facade.ReadById(id);
-                LineViewModel viewModel = mapper.Map<LineViewModel>(result);
+                if (!Guid.TryParse(id, out Guid parseResult))
+                    return NotFound();
+
+                Guid guid = Guid.Parse(id);
+
+                var result = _facade.ReadById(guid);
+                LineViewModel viewModel = _mapper.Map<LineViewModel>(result);
                 if (viewModel == null)
                 {
-                    throw new Exception("Invalid Id");
+                    Dictionary<string, object> Result =
+                          new ResultFormatter(ApiVersion, General.NOT_FOUND_STATUS_CODE, General.NOT_FOUND_MESSAGE)
+                          .Fail();
+
+                    return NotFound();
                 }
 
                 return Ok(new
@@ -117,19 +133,15 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] LineViewModel viewModel)
         {
-            identityService.Token = Request.Headers["Authorization"].First().Replace("Bearer ", "");
-            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
-
-            IValidateService validateService = (IValidateService)serviceProvider.GetService(typeof(IValidateService));
+            VerifyUser();
 
             try
             {
-                viewModel.Id = Guid.NewGuid().ToString();
-                validateService.Validate(viewModel);
+                _validateService.Validate(viewModel);
 
-                Line model = mapper.Map<Line>(viewModel);
+                Line model = _mapper.Map<Line>(viewModel);
 
-                int result = await facade.Create(model, identityService.Username);
+                int result = await _facade.Create(model, _identityService.Username);
 
                 Dictionary<string, object> Result =
                     new ResultFormatter(ApiVersion, General.CREATED_STATUS_CODE, General.OK_MESSAGE)
@@ -153,19 +165,24 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] Guid id, [FromBody] LineViewModel vm)
+        public async Task<IActionResult> Put([FromRoute] string id, [FromBody] LineViewModel vm)
         {
-            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
+            VerifyUser();
 
-            Line m = mapper.Map<Line>(vm);
-
-            IValidateService validateService = (IValidateService)serviceProvider.GetService(typeof(IValidateService));
+            
 
             try
             {
-                validateService.Validate(vm);
+                _validateService.Validate(vm);
 
-                int result = await facade.Update(id, m, identityService.Username);
+                if (!Guid.TryParse(id, out Guid parseResult))
+                    return NotFound();
+
+                Guid guid = Guid.Parse(id);
+
+                Line m = _mapper.Map<Line>(vm);
+
+                int result = await _facade.Update(guid, m, _identityService.Username);
 
                 return NoContent();
             }
@@ -188,13 +205,18 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete([FromRoute] Guid id)
+        public IActionResult Delete([FromRoute] string id)
         {
-            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
+            VerifyUser();
 
             try
             {
-                facade.Delete(id, identityService.Username);
+                if (!Guid.TryParse(id, out Guid parseResult))
+                    return NotFound();
+
+                Guid guid = Guid.Parse(id);
+
+                _facade.Delete(guid, _identityService.Username);
                 return NoContent();
             }
             catch (Exception)
@@ -206,7 +228,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
         [HttpPost("upload")]
         public async Task<IActionResult> PostCSVFileAsync()
         {
-            identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
+            _identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
 
             try
             {
@@ -215,7 +237,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
                     var UploadedFile = Request.Form.Files[0];
                     StreamReader Reader = new StreamReader(UploadedFile.OpenReadStream());
                     List<string> FileHeader = new List<string>(Reader.ReadLine().Replace("\"", string.Empty).Split(","));
-                    var ValidHeader = facade.CsvHeader.SequenceEqual(FileHeader, StringComparer.OrdinalIgnoreCase);
+                    var ValidHeader = _facade.CsvHeader.SequenceEqual(FileHeader, StringComparer.OrdinalIgnoreCase);
 
                     if (ValidHeader)
                     {
@@ -229,16 +251,16 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
                         Csv.Configuration.HeaderValidated = null;
 
                         List<LineCsvViewModel> viewModelCsv = Csv.GetRecords<LineCsvViewModel>().ToList();
-                        Tuple<bool, List<object>> Validated = facade.UploadValidate(ref viewModelCsv, Request.Form.ToList());
+                        Tuple<bool, List<object>> Validated = _facade.UploadValidate(ref viewModelCsv, Request.Form.ToList());
 
                         Reader.Close();
 
                         if (Validated.Item1)
                         {
 
-                            List<LineViewModel> viewModel = await facade.MapCsvToViewModel(viewModelCsv);
-                            List<Line> model = mapper.Map<List<Line>>(viewModel);
-                            await facade.UploadData(model, identityService.Username);
+                            List<LineViewModel> viewModel = await _facade.MapCsvToViewModel(viewModelCsv);
+                            List<Line> model = _mapper.Map<List<Line>>(viewModel);
+                            await _facade.UploadData(model, _identityService.Username);
 
                             Dictionary<string, object> Result =
                                new ResultFormatter(ApiVersion, General.CREATED_STATUS_CODE, General.OK_MESSAGE)
