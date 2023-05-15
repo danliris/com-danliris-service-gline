@@ -131,15 +131,15 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] LineViewModel viewModel)
+        public async Task<IActionResult> Post([FromBody] LineCreateModel createModel)
         {
             VerifyUser();
 
             try
             {
-                _validateService.Validate(viewModel);
+                _validateService.Validate(createModel);
 
-                Line model = _mapper.Map<Line>(viewModel);
+                Line model = _mapper.Map<Line>(createModel);
 
                 int result = await _facade.Create(model, _identityService.Username);
 
@@ -165,22 +165,20 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] string id, [FromBody] LineViewModel vm)
+        public async Task<IActionResult> Put([FromRoute] string id, [FromBody] LineViewModel viewModel)
         {
             VerifyUser();
 
-            
-
             try
             {
-                _validateService.Validate(vm);
+                _validateService.Validate(viewModel);
 
                 if (!Guid.TryParse(id, out Guid parseResult))
                     return NotFound();
 
                 Guid guid = Guid.Parse(id);
 
-                Line m = _mapper.Map<Line>(vm);
+                Line m = _mapper.Map<Line>(viewModel);
 
                 int result = await _facade.Update(guid, m, _identityService.Username);
 
