@@ -156,6 +156,48 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
             }
         }
 
+        [HttpGet("ro-ongoing-qc")]
+        public IActionResult GetRoongoingQc(string keyword = null, string filter = "{}")
+        {
+            try
+            {
+                var Data = facade.GetRoOngoingQc(keyword, filter);
+
+                List<object> listData = new List<object>();
+                listData.AddRange(Data.Item1.AsQueryable().Select(s => new
+                {
+                    s.rono,
+                    s.jam_target,
+                    s.smv,
+                    s.artikel,
+                    s.setting_date,
+                    s.setting_time,
+                    s.nama_unit,
+                    s.total_pass_per_hari,
+                    s.total_reject_per_hari
+                }));
+
+                return Ok(new
+                {
+                    apiVersion = ApiVersion,
+                    statusCode = General.OK_STATUS_CODE,
+                    message = General.OK_MESSAGE,
+                    data = listData,
+                    info = new Dictionary<string, object>
+                    {
+                        { "total", Data.Item2 },
+                    },
+                });
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
         [HttpGet("{id}")]
         public IActionResult Get(Guid id)
         {

@@ -18,5 +18,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Interfaces
         int Delete(Guid id, string username);
         ReadResponse<object> GetRoLoader(int Page = 1, int Size = 25, string Order = "{}", string Keyword = null, string Filter = "{}");
         Tuple<List<RoOngoingViewModel>, int> GetRoOngoingOp(string keyword = null, string Filter = "{}");
+        Tuple<List<RoOngoingQcViewModel>, int> GetRoOngoingQc(string keyword = null, string Filter = "{}");
     }
 }
