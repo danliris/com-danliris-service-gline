@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,6 +19,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
         private readonly GlineDbContext dbContext;
         private readonly DbSet<TransaksiOperator> dbSet;
         private readonly DbSet<SummaryOperator> dbSetSummaryOperator;
+        private readonly DbSet<Rework> dbSetRework;
+        private readonly DbSet<ReworkTime> dbSetReworkTime;
         public readonly IServiceProvider serviceProvider;
 
         private string USER_AGENT = "Facade";
@@ -27,6 +30,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             this.dbContext = dbContext;
             dbSet = dbContext.Set<TransaksiOperator>();
             dbSetSummaryOperator = dbContext.Set<SummaryOperator>();
+            dbSetRework = dbContext.Set<Rework>();
+            dbSetReworkTime = dbContext.Set<ReworkTime>();
             this.serviceProvider = serviceProvider;
         }
 
@@ -70,10 +75,10 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             return Tuple.Create(Data, TotalData, OrderDictionary);
         }
 
-        public async Task<int> Create(TransaksiOperator model, string username)
+        public async Task<dynamic> Create(TransaksiOperator model, string username)
         {
-            int Modified = 0;
-
+            dynamic returnResult = new ExpandoObject();
+            returnResult.roOverflow = false;
             using (var transaction = this.dbContext.Database.BeginTransaction())
             {
                 try
@@ -88,22 +93,77 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
                     {
                         var summaryOperatorInsert = GenerateSummaryOperator(model, username);
                         dbSetSummaryOperator.Add(summaryOperatorInsert);
-                       
+
+                        returnResult.npk = summaryOperatorInsert.npk;
+                        returnResult.jml_pass_per_ro = summaryOperatorInsert.jml_pass_per_ro;
+                        returnResult.jml_pass_per_hari = 1;
                     }
                     else
                     {
                         if ((summaryOperatorData.jml_pass_per_ro + 1) > model.quantity)
                         {
-                            return -1;
+                            returnResult.roOverflow = true;
+                            return returnResult;
                         }
                         EntityExtension.FlagForUpdate(summaryOperatorData, username, USER_AGENT);
                         summaryOperatorData.jml_pass_per_ro++;
-                        
+
+                        returnResult.npk = summaryOperatorData.npk;
+                        returnResult.jml_pass_per_ro = summaryOperatorData.jml_pass_per_ro;
+                        returnResult.jml_pass_per_hari = TotalPerHariCount(model.id_line, model.npk);
+
                         dbContext.Update(summaryOperatorData);
                     }
 
-                    Modified = await dbContext.SaveChangesAsync();
+                    await dbContext.SaveChangesAsync();
                     transaction.Commit();
+                }
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                    while (e.InnerException != null) e = e.InnerException;
+                    throw e;
+                }
+            }
+            return returnResult;
+        }
+
+        public async Task<int> DoRework(ReworkTime model, string username, string npk, Guid id_ro, Guid id_line, Guid id_proses)
+        {
+            int Modified = 0;
+
+            using (var transaction = this.dbContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    var readForRework = dbSetRework.Where(x => x.npk == npk && x.id_ro == id_ro && x.id_line == id_line && x.id_proses == id_proses).FirstOrDefault();
+                    var readForSummaryOperator = dbSetSummaryOperator.Where(x => x.npk == npk && x.id_ro == id_ro && x.id_proses == id_proses).FirstOrDefault();
+
+                    if (readForRework != null && readForSummaryOperator != null)
+                    {
+                        model.Id = Guid.NewGuid();
+                        model.npk = npk;
+                        model.nama_operator = readForRework.nama_operator;
+                        model.id_rework = readForRework.Id;
+                        EntityExtension.FlagForCreate(model, username, USER_AGENT);
+                        dbSetReworkTime.Add(model);
+
+                        EntityExtension.FlagForUpdate(readForSummaryOperator, username, USER_AGENT);
+                        readForSummaryOperator.total_rework--;
+                        readForSummaryOperator.total_waktu_pengerjaan += model.jam_akhir.Subtract(model.jam_awal);
+                        dbContext.Update(readForSummaryOperator);
+
+                        EntityExtension.FlagForUpdate(readForRework, username, USER_AGENT);
+                        readForRework.qty_rework--;
+                        dbContext.Update(readForRework);
+
+                        Modified = await dbContext.SaveChangesAsync();
+                        transaction.Commit();
+                    }
+                    else
+                    {
+                        return -1;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -116,7 +176,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             return Modified;
         }
 
-        private SummaryOperator GenerateSummaryOperator(TransaksiOperator transaksiOperator, string username)
+
+            private SummaryOperator GenerateSummaryOperator(TransaksiOperator transaksiOperator, string username)
         {
             var summaryOperator = new SummaryOperator();
             EntityExtension.FlagForCreate(summaryOperator, username, USER_AGENT);
@@ -134,7 +195,10 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             return summaryOperator;
         }
 
-
+        private int TotalPerHariCount(Guid id_line, string npk)
+        {
+            return dbSet.Where(x => x.id_line == id_line && x.npk == npk && x.CreatedUtc.Date == DateTime.Now.Date).ToList().Count;
+        }
 
     }
 }

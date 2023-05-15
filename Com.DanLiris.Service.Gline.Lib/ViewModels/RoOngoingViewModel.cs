@@ -16,12 +16,12 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels
         public int _total_output_ro { get; set; }
         public int _total_output_hari { get; set; }
         public int _total_rework { get; set; }
-        public TimeSpan _total_pengerjaan { get; set; }
+        public double _total_pengerjaan { get; set; }
 
         public RoOngoingViewModel(
             string rono, int jam_target, double smv, string artikel, DateTime setting_date,
             TimeSpan setting_time, string nama_unit, int total_output_ro, int total_output_hari,
-            int total_rework, TimeSpan total_pengerjaan)
+            int total_rework, double total_pengerjaan)
         {
             _rono = rono;
             _jam_target = jam_target;
