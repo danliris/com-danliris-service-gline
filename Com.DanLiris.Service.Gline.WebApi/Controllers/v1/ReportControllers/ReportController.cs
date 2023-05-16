@@ -151,5 +151,63 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ReportControllers
                 return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
             }
         }
+
+        [HttpGet("ro-detail-opt")]
+        public IActionResult GetRoDetailOptReport(string ro, string unit, int line, DateTimeOffset? date)
+        {
+            try
+            {
+                if (date == null)
+                    date = DateTimeOffset.UtcNow;
+
+                var data = facade.GetRoDetailOptReport(ro, unit, line, date.GetValueOrDefault());
+
+                return Ok(new
+                {
+                    apiVersion = ApiVersion,
+                    data = data.Item1,
+                    info = new { total = data.Item2 },
+                    message = General.OK_MESSAGE,
+                    statusCode = General.OK_STATUS_CODE
+                });
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
+        [HttpGet("ro-detail-opt/download")]
+        public IActionResult GetRoDetailOptXls(string ro, string unit, int line, DateTimeOffset? date)
+        {
+            try
+            {
+                if (date == null)
+                    date = DateTimeOffset.UtcNow;
+
+                byte[] xlsInBytes;
+                var xls = facade.GetRoDetailOptExcel(ro, unit, line, date.GetValueOrDefault());
+
+                string filename = "Laporan Detail Operator";
+                if (!string.IsNullOrWhiteSpace(unit)) filename += " " +unit;
+                if (date != null) filename += " " + ((DateTime)date.Value.DateTime).ToString("dd-MM-yyyy");
+                filename += ".xlsx";
+
+                xlsInBytes = xls.ToArray();
+                var file = File(xlsInBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
+                return file;
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
     }
 }
