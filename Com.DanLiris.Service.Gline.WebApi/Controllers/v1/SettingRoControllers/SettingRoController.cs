@@ -199,11 +199,16 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult Get(Guid id)
+        public IActionResult Get(string id)
         {
             try
             {
-                var result = facade.ReadById(id);
+                if (!Guid.TryParse(id, out Guid parseResult))
+                    return NotFound();
+
+                Guid guid = Guid.Parse(id);
+
+                var result = facade.ReadById(guid);
                 SettingRoViewModel viewModel = mapper.Map<SettingRoViewModel>(result);
                 if (viewModel == null)
                 {
@@ -267,7 +272,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] Guid id, [FromBody] SettingRoViewModel vm)
+        public async Task<IActionResult> Put([FromRoute] string id, [FromBody] SettingRoViewModel vm)
         {
             identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
 
@@ -277,9 +282,14 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
 
             try
             {
+                if (!Guid.TryParse(id, out Guid parseResult))
+                    return NotFound();
+
+                Guid guid = Guid.Parse(id);
+
                 validateService.Validate(vm);
 
-                int result = await facade.Update(id, m, identityService.Username);
+                int result = await facade.Update(guid, m, identityService.Username);
 
                 return NoContent();
             }
@@ -302,13 +312,18 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete([FromRoute] Guid id)
+        public IActionResult Delete([FromRoute] string id)
         {
             identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
 
             try
             {
-                facade.Delete(id, identityService.Username);
+                if (!Guid.TryParse(id, out Guid parseResult))
+                    return NotFound();
+
+                Guid guid = Guid.Parse(id);
+
+                facade.Delete(guid, identityService.Username);
                 return NoContent();
             }
             catch (Exception)

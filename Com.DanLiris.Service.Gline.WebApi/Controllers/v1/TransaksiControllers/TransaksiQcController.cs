@@ -101,9 +101,9 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
 
                 TransaksiQc model = mapper.Map<TransaksiQc>(viewModel);
 
-                int result = await facade.Create(model, identityService.Username);
+                var result = await facade.Create(model, identityService.Username);
 
-                if (result == -1)
+                if (result.roOverflow == true)
                 {
                     Dictionary<string, object> ErrorResult =
                         new ResultFormatter(ApiVersion, General.BAD_REQUEST_STATUS_CODE, General.QUANTITY_OVERFLOW)
@@ -111,10 +111,10 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.TransaksiControllers
                     return BadRequest(ErrorResult);
                 }
 
-                Dictionary<string, object> Result =
-                    new ResultFormatter(ApiVersion, General.CREATED_STATUS_CODE, General.OK_MESSAGE)
-                    .Ok();
-                return Created(String.Concat(Request.Path, "/", 0), Result);
+                //Dictionary<string, object> Result =
+                //    new ResultFormatter(ApiVersion, General.CREATED_STATUS_CODE, General.OK_MESSAGE)
+                //    .Ok();
+                return CreatedAtAction(nameof(Get), result);
             }
             catch (ServiceValidationExeption e)
             {

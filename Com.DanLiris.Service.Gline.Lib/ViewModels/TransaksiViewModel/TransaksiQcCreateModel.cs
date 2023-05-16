@@ -61,7 +61,7 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.TransaksiViewModel
 
             if (string.IsNullOrWhiteSpace(nama_proses_reject) && (bool)reject)
             {
-                yield return new ValidationResult("Nama proses is required", new List<string> { "nama_proses" });
+                yield return new ValidationResult("Nama proses is required", new List<string> { "nama_proses_reject" });
             }
         }
     }

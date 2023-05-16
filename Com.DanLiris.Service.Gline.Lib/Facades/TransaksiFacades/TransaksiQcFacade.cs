@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -80,109 +81,124 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             return Tuple.Create(Data, TotalData, OrderDictionary);
         }
 
-        public async Task<int> Create(TransaksiQc model, string username)
+        public async Task<dynamic> Create(TransaksiQc model, string username)
         {
-            int Modified = 0;
-
+            dynamic returnResult = new ExpandoObject();
+            returnResult.roOverflow = false;
             using (var transaction = this.dbContext.Database.BeginTransaction())
             {
                 try
                 {
                     model.Id = Guid.NewGuid();
                     EntityExtension.FlagForCreate(model, username, USER_AGENT);
-                    this.dbSet.Add(model);
+                    dbSet.Add(model);
 
                     var summaryQcData = dbSetSummaryQc.Where(i => i.rono == model.rono).FirstOrDefault();
                     var summaryOptData = dbSetSummaryOpt.Where(i => i.rono == model.rono).ToList();
 
-                    if(summaryOptData != null)
+                    if(summaryOptData != null && summaryOptData.Count > 0)
                     {
-                        //var lowestQty = summaryOptData.OrderBy(x => x.jml_pass_per_ro).FirstOrDefault();
                         var summaryPerOpt = summaryOptData.Where(x => x.npk == model.npk_reject && x.id_proses == model.id_proses_reject).FirstOrDefault();
 
-                        //if (lowestQty.jml_pass_per_ro > 0) 
-                        //{
-                            if (summaryQcData == null)
+                        if (summaryQcData == null)
+                        {
+                            if ((bool)model.reject)
                             {
-                                if ((bool)model.reject)
+                                if(summaryPerOpt != null)
                                 {
-                                    if(summaryPerOpt != null)
-                                    {
-                                        var reworkInsert = GenerateRework(model, username);
-                                        dbSetRework.Add(reworkInsert);
+                                    var reworkInsert = GenerateRework(model, username);
+                                    dbSetRework.Add(reworkInsert);
 
-                                        summaryPerOpt.total_rework++;
-                                        EntityExtension.FlagForUpdate(summaryPerOpt, username, USER_AGENT);
-                                        dbContext.Update(summaryPerOpt);
-                                    }
-                                    else
-                                    {
-                                        return -1;
-                                    }
+                                    returnResult.total_pass_per_hari = 0;
+                                    returnResult.total_reject_per_hari = reworkInsert.qty_rework;
+
+                                    summaryPerOpt.total_rework++;
+                                    EntityExtension.FlagForUpdate(summaryPerOpt, username, USER_AGENT);
+                                    dbContext.Update(summaryPerOpt);
                                 }
+                                else
+                                {
+                                    returnResult.roOverflow = true;
+                                    return returnResult;
+                                }
+                            } 
+                            else
+                            {
+                                returnResult.total_pass_per_hari = 1;
+                                returnResult.total_reject_per_hari = 0;
+                            }
 
-                                var summaryQcInsert = GenerateSummaryQc(model, username);
-                                EntityExtension.FlagForCreate(summaryQcInsert, username, USER_AGENT);
+                            var summaryQcInsert = GenerateSummaryQc(model, username);
+                            EntityExtension.FlagForCreate(summaryQcInsert, username, USER_AGENT);
 
-                                dbSetSummaryQc.Add(summaryQcInsert); 
+                            dbSetSummaryQc.Add(summaryQcInsert); 
+
+                        }
+                        else
+                        {
+                            if ((summaryQcData.total_pass + 1) > model.quantity)
+                            {
+                                returnResult.roOverflow = true;
+                                return returnResult;
+                            }
+
+                            EntityExtension.FlagForUpdate(summaryQcData, username, USER_AGENT);
+
+                            if ((bool)model.pass)
+                            {
+                                summaryQcData.total_pass++;
+                                EntityExtension.FlagForUpdate(summaryQcData, username, USER_AGENT);
+                                dbContext.Update(summaryQcData);
+                                
+                                returnResult.total_pass_per_hari = TotalPassPerHariQc(model.id_line, model.rono);
+                                returnResult.total_reject_per_hari = TotalRejectPerHariQc(model.id_line, model.rono);
 
                             }
                             else
                             {
-                                if ((summaryQcData.total_pass + 1) > model.quantity)
+                                if (summaryPerOpt != null)
                                 {
-                                    return -1;
-                                }
+                                    summaryQcData.total_reject++;
+                                    EntityExtension.FlagForUpdate(summaryQcData, username, USER_AGENT);
 
-                                EntityExtension.FlagForUpdate(summaryQcData, username, USER_AGENT);
-
-                                if ((bool)model.pass)
-                                {
-                                    summaryQcData.total_pass++;
-                                    dbContext.Update(summaryQcData);
-                                }
-                                else
-                                {
-                                    if (summaryPerOpt != null)
+                                    var reworkOperator = dbSetRework.Where(i => i.npk == model.npk_reject && i.rono == model.rono && i.id_line == model.id_line && i.id_proses == model.id_proses_reject).FirstOrDefault();
+                                    if (reworkOperator != null)
                                     {
-                                        summaryQcData.total_reject++;
-                                        var reworkOperator = dbSetRework.Where(i => i.npk == model.npk_reject && i.rono == model.rono && i.id_line == model.id_line && i.id_proses == model.id_proses_reject).FirstOrDefault();
-                                        if (reworkOperator != null)
-                                        {
-                                            reworkOperator.qty_rework++;
-                                            EntityExtension.FlagForUpdate(reworkOperator, username, USER_AGENT);
-                                            dbContext.Update(reworkOperator);
-                                        }
-                                        else
-                                        {
-                                            var reworkInsert = GenerateRework(model, username);
-                                            dbSetRework.Add(reworkInsert);
-                                        }
-
-                                        summaryPerOpt.total_rework++;
-                                        dbContext.Update(summaryPerOpt);
-                                        EntityExtension.FlagForUpdate(summaryPerOpt, username, USER_AGENT);
+                                        reworkOperator.qty_rework++;
+                                        EntityExtension.FlagForUpdate(reworkOperator, username, USER_AGENT);
+                                        dbContext.Update(reworkOperator);
                                     }
                                     else
                                     {
-                                        return -1;
+                                        var reworkInsert = GenerateRework(model, username);
+                                        EntityExtension.FlagForCreate(reworkInsert, username, USER_AGENT);
+                                        dbSetRework.Add(reworkInsert);
                                     }
 
-                                    dbContext.Update(summaryQcData);
+                                    summaryPerOpt.total_rework++;
+                                    EntityExtension.FlagForUpdate(summaryPerOpt, username, USER_AGENT);
+                                    dbContext.Update(summaryPerOpt);
+
+                                    returnResult.total_pass_per_hari = TotalPassPerHariQc(model.id_line, model.rono);
+                                    returnResult.total_reject_per_hari = TotalRejectPerHariQc(model.id_line, model.rono);
                                 }
+                                else
+                                {
+                                    returnResult.roOverflow = true;
+                                    return returnResult;
+                                }
+
+                                dbContext.Update(summaryQcData);
                             }
-                        //}
-                        //else
-                        //{
-                        //    return -1;
-                        //}
+                        }
                     }
                     else
                     {
-                        return -1;
+                        returnResult.roOverflow = true;
+                        return returnResult;
                     }
 
-                    Modified = await dbContext.SaveChangesAsync();
+                    await dbContext.SaveChangesAsync();
                     transaction.Commit();
                 }
                 catch (Exception e)
@@ -193,7 +209,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
                 }
             }
 
-            return Modified;
+            return returnResult;
         }
 
         private SummaryQc GenerateSummaryQc(TransaksiQc transaksiQc, string username)
@@ -228,6 +244,16 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             rework.rono = transaksiQc.rono;
 
             return rework;
+        }
+
+        private int TotalPassPerHariQc(Guid id_line, string ro)
+        {
+            return dbSet.Where(x => x.id_line == id_line && x.rono == ro && x.CreatedUtc.Date == DateTime.Now.Date && x.pass == true).ToList().Count;
+        }
+
+        private int TotalRejectPerHariQc(Guid id_line, string ro)
+        {
+            return dbSet.Where(x => x.id_line == id_line && x.rono == ro && x.CreatedUtc.Date == DateTime.Now.Date && x.reject == true).ToList().Count;
         }
 
     }
