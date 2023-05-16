@@ -225,7 +225,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             Guid id_line = Guid.Empty;
             string npk = "";
             Guid id_proses = Guid.Empty;
-            int totalPerHari = 0;
 
             bool hasIdLineFilter = FilterDictionary.ContainsKey("id_line") && Guid.TryParse(FilterDictionary["id_line"], out id_line);
             bool hasNpkFilter = FilterDictionary.ContainsKey("npk") && !String.IsNullOrWhiteSpace(FilterDictionary["npk"]);
@@ -233,34 +232,34 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
 
             npk = hasNpkFilter ? FilterDictionary["npk"] : "";
 
-            if (hasIdLineFilter && hasNpkFilter)
-            {
-                totalPerHari = TotalPerHariCount(id_line, npk);
-            }
-
             if (!string.IsNullOrWhiteSpace(keyword))
                 Query = Query.Where(entity => entity.rono.Contains(keyword));
 
             var readForRoOngoingOp = Query.Where(x =>
                     (!hasIdLineFilter ? true : x.id_line == id_line) &&
                     x.IsDeleted == false
-                ).ToList();
+                );
 
             var readForSummaryOperator = dbSetSummaryOperator.Where(x =>
                     (!hasNpkFilter ? true : x.npk == npk) &&
                     (!hasIdProsesFilter ? true : x.id_proses == id_proses) &&
                     x.IsDeleted == false
-                ).ToList();
+                );
 
-            if (readForSummaryOperator.Count > 0)
+            if (readForSummaryOperator.ToList().Count > 0 && hasNpkFilter && hasIdProsesFilter)
             {
+                int totalPerHari = 0;
+                if (hasIdLineFilter)
+                {
+                    totalPerHari = TotalPerHariCount(id_line, npk);
+                }
+
                 var queryJoin =
                     from settingRo in readForRoOngoingOp
                     join summaryOperator in readForSummaryOperator
-                    on settingRo.Id equals summaryOperator.id_ro into finalData
-                    from resultData in finalData.DefaultIfEmpty()
-                    where resultData.jml_pass_per_ro < settingRo.quantity
-                    || resultData.total_rework >= 1
+                    on settingRo.Id equals summaryOperator.id_ro 
+                    where summaryOperator.jml_pass_per_ro < settingRo.quantity
+                    || summaryOperator.total_rework >= 1
                     select new RoOngoingViewModel
                     (
                         settingRo.rono,
@@ -270,15 +269,16 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                         settingRo.setting_date,
                         settingRo.setting_time,
                         settingRo.nama_unit,
-                        resultData.jml_pass_per_ro,
+                        summaryOperator.jml_pass_per_ro,
                         totalPerHari,
-                        resultData.total_rework,
-                        resultData.total_waktu_pengerjaan.TotalSeconds
+                        summaryOperator.total_rework,
+                        summaryOperator.total_waktu_pengerjaan.TotalSeconds
                     );
 
-                var result = queryJoin.ToList();
+                var resultJoin = queryJoin.ToList();
+                int countJoinData = resultJoin.Count;
 
-                return Tuple.Create(result, result.Count);
+                return Tuple.Create(resultJoin, countJoinData);
             }
 
             var query = readForRoOngoingOp.Select(x => new RoOngoingViewModel(
@@ -293,9 +293,12 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                     0,
                     0,
                     0
-                )).ToList();
+                ));
 
-            return Tuple.Create(query, query.Count);
+            var resultData = query.ToList();
+            int countResultData = resultData.Count;
+
+            return Tuple.Create(resultData, countResultData);
         }
 
         public Tuple<List<RoOngoingQcViewModel>, int> GetRoOngoingQc(string keyword = null, string Filter = "{}")
