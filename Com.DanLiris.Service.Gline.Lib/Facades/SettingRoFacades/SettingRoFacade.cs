@@ -309,8 +309,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             Guid id_line = Guid.Empty;
             bool hasIdLineFilter = FilterDictionary.ContainsKey("id_line") && Guid.TryParse(FilterDictionary["id_line"], out id_line);
 
-            List<TransaksiQc> totalPass = new List<TransaksiQc>();
-            List<TransaksiQc> totalReject = new List<TransaksiQc>();
+            List<TransaksiQc> totalPerHari = new List<TransaksiQc>();
 
             if (!string.IsNullOrWhiteSpace(keyword))
                 settingRo = settingRo.Where(entity => entity.rono.Contains(keyword) && entity.IsDeleted == false);
@@ -320,8 +319,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
 
             if (hasIdLineFilter && !string.IsNullOrWhiteSpace(keyword))
             {
-                totalPass = TotalPassPerHariQc(id_line, keyword);
-                totalReject = TotalRejectPerHariQc(id_line, keyword);
+                totalPerHari = TotalPerHariQc(id_line, keyword);
             }
 
             var readForRoOngoingQc =
@@ -329,7 +327,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                  join b in dbContext.SummaryQc
                  on a.rono equals b.rono into finalData
                  from resultData in finalData.DefaultIfEmpty()
-                 where resultData.total_pass < a.quantity
+                 where resultData.total_pass < a.quantity 
+                 || resultData.total_pass == null
                  select new RoOngoingQcViewModel
                  {
                      rono = a.rono,
@@ -339,8 +338,8 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                      setting_date = a.setting_date,
                      setting_time = a.setting_time,
                      smv = a.smv,
-                     total_pass_per_hari = totalPass.Where(x => x.rono == a.rono).Count(),
-                     total_reject_per_hari = totalReject.Where(x=> x.rono == a.rono).Count(),
+                     total_pass_per_hari = totalPerHari.Where(x => x.rono == a.rono && x.pass == true).Count(),
+                     total_reject_per_hari = totalPerHari.Where(x=> x.rono == a.rono && x.reject == true).Count(),
                  });
 
             var result = readForRoOngoingQc.ToList();
@@ -354,14 +353,9 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             return dbSetTransaksiOperator.Where(x => x.id_line == id_line && x.npk == npk && x.CreatedUtc.Date == DateTime.Now.Date).ToList().Count;
         }
 
-        private List<TransaksiQc> TotalPassPerHariQc(Guid id_line, string ro)
+        private List<TransaksiQc> TotalPerHariQc(Guid id_line, string ro)
         {
-            return dbSetTransaksiQc.Where(x => x.id_line == id_line && x.CreatedUtc.Date == DateTime.Now.Date && x.pass == true && (!string.IsNullOrWhiteSpace(ro) ? x.rono.Contains(ro) : true)).ToList();
-        }
-
-        private List<TransaksiQc> TotalRejectPerHariQc(Guid id_line, string ro)
-        {
-            return dbSetTransaksiQc.Where(x => x.id_line == id_line && x.CreatedUtc.Date == DateTime.Now.Date && x.reject == true && (!string.IsNullOrWhiteSpace(ro) ? x.rono.Contains(ro) : true)).ToList();
+            return dbSetTransaksiQc.Where(x => x.id_line == id_line && x.CreatedUtc.Date == DateTime.Now.Date && (!string.IsNullOrWhiteSpace(ro) ? x.rono.Contains(ro) : true)).ToList();
         }
     }
 }
