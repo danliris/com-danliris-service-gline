@@ -8,6 +8,6 @@ namespace Com.DanLiris.Service.Gline.Lib.Interfaces
     public interface ITransaksiQcFacade
     {
         Tuple<List<TransaksiQc>, int, Dictionary<string, string>> Read(int Page = 1, int Size = 25, string Order = "{}", string Keyword = null, string Filter = "{}");
-        Task<int> Create(TransaksiQc model, string username);
+        Task<dynamic> Create(TransaksiQc model, string username);
     }
 }
