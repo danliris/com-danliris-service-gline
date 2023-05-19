@@ -125,7 +125,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ReportFacades
                                && (line == 0 ? b.nama_line == line : true)
                                && a.IsDeleted == false
                                && b.IsDeleted == false
-                               group new { tgl = a.CreatedUtc.Date, rono = a.rono, nama = a.nama_reject, line = b.nama_line, unit = b.nama_unit } by new { a.CreatedUtc.Date, a.rono, a.nama_reject, b.nama_line, b.nama_unit } into G
+                               group  new { tgl = a.CreatedUtc.Date, rono = a.rono, nama = a.nama_reject, line = b.nama_line, unit = b.nama_unit } by new { a.CreatedUtc.Date, a.rono, a.nama_reject, b.nama_line, b.nama_unit } into G
                                select new RoDetailOptReportViewModel
                                {
                                    tgl = G.Key.Date,
@@ -150,6 +150,49 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ReportFacades
 
             return querySum.AsQueryable();
         }
+
+        private string FormatHour (int hour)
+        {
+            string convertHour = hour.ToString();
+            if (hour < 10)
+            {
+                convertHour = $"0{convertHour}.00 - {hour + 1}.00";
+            }
+            convertHour = $"{convertHour}.00 - {hour + 1}.00";
+            return convertHour;
+        }
+
+        private IQueryable<RoOperatorHourlyWebReportViewModel> GetQueryRoOperatorHourlyWeb(string area, int line, string proses, DateTimeOffset? dateFrom, DateTimeOffset? dateTo)
+        {
+            var queryTempOpt = (from a in dbContext.TransaksiOperator
+                                join b in dbContext.Line
+                                on a.id_line equals b.Id
+                                where a.CreatedUtc.Date >= dateFrom.Value.Date
+                                && a.CreatedUtc.Date <= dateTo.Value.Date
+                                && (!string.IsNullOrWhiteSpace(area) ? b.nama_unit == area : true)
+                                && (line != 0 ? b.nama_line == line : true)
+                                && (!string.IsNullOrWhiteSpace(proses) ? a.nama_proses == proses : true)
+                                && a.IsDeleted == false
+                                && b.IsDeleted == false
+                                group a
+                                by new { tgl = a.CreatedUtc.Date, jam = a.CreatedUtc.Hour, nama = a.nama, proses = a.nama_proses,  } into result1
+                                select new RoOperatorHourlyWebReportViewModel
+                                {
+                                    npk = result1.Max(x => x.npk),
+                                    id_setting_ro = result1.Max(x => x.id_setting_ro),
+                                    id_proses = result1.Max(x => x.id_proses),
+                                    tanggal = result1.Key.tgl,
+                                    nama = result1.Key.nama,
+                                    nama_proses = result1.Key.proses,
+                                    range_waktu = FormatHour(result1.Key.jam),
+                                    total_pass = result1.Count(x => x.pass)
+                                });
+
+
+            return queryTempOpt.AsQueryable();
+
+        }
+
 
         public MemoryStream GetRoDoneExcel(string unit, int line, DateTimeOffset dateFrom, DateTimeOffset dateTo)
         {
@@ -372,5 +415,14 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ReportFacades
 
             return Tuple.Create(data.ToList(), data.Count());
         }
+
+        public Tuple<List<RoOperatorHourlyWebReportViewModel>, int> GetRoOperatorHourlyWebReport(string area, int line, string proses, DateTimeOffset? dateFrom, DateTimeOffset? dateTo)
+        {
+            var data = GetQueryRoOperatorHourlyWeb(area, line, proses, dateFrom, dateTo);
+
+            return Tuple.Create(data.ToList(), data.Count());
+        }
+
+         
     }
 }

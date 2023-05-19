@@ -192,7 +192,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ReportControllers
                 var xls = facade.GetRoDetailOptExcel(ro, unit, line, date.GetValueOrDefault());
 
                 string filename = "Laporan Detail Operator";
-                if (!string.IsNullOrWhiteSpace(unit)) filename += " " +unit;
+                if (!string.IsNullOrWhiteSpace(unit)) filename += " " + unit;
                 if (date != null) filename += " " + ((DateTime)date.Value.DateTime).ToString("dd-MM-yyyy");
                 filename += ".xlsx";
 
@@ -209,5 +209,36 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ReportControllers
             }
         }
 
+        [HttpGet("ro-operator-hourly")]
+        public IActionResult GetRoOperatorHourlyWebReport(string area, int line, string proses, DateTimeOffset? dateFrom, DateTimeOffset? dateTo)
+        {
+            try
+            {
+                if (dateTo == null)
+                    dateTo = DateTimeOffset.UtcNow;
+
+                if (dateFrom == null)
+                    dateFrom = DateTimeOffset.MinValue;
+
+                var data = facade.GetRoOperatorHourlyWebReport(area, line, proses, dateFrom.GetValueOrDefault(), dateTo.GetValueOrDefault());
+
+                return Ok(new
+                {
+                    apiVersion = ApiVersion,
+                    data = data.Item1,
+                    info = new { total = data.Item2 },
+                    message = General.OK_MESSAGE,
+                    statusCode = General.OK_STATUS_CODE
+                });
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                   new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                   .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+
+        }
     }
 }
