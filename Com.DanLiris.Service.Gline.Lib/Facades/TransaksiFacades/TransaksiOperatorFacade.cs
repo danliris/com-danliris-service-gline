@@ -110,7 +110,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
 
                         returnResult.npk = summaryOperatorData.npk;
                         returnResult.jml_pass_per_ro = summaryOperatorData.jml_pass_per_ro;
-                        returnResult.jml_pass_per_hari = TotalPerHariCount(model.id_line, model.npk);
+                        returnResult.jml_pass_per_hari = TotalPerHariCount(model.id_line, model.npk) + 1;
 
                         dbContext.Update(summaryOperatorData);
                     }
