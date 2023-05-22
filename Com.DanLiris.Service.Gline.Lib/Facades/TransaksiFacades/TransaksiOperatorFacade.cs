@@ -176,8 +176,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.TransaksiFacades
             return Modified;
         }
 
-
-            private SummaryOperator GenerateSummaryOperator(TransaksiOperator transaksiOperator, string username)
+        private SummaryOperator GenerateSummaryOperator(TransaksiOperator transaksiOperator, string username)
         {
             var summaryOperator = new SummaryOperator();
             EntityExtension.FlagForCreate(summaryOperator, username, USER_AGENT);

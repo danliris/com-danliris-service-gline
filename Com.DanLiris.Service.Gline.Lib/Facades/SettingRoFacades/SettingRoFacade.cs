@@ -236,13 +236,13 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                 Query = Query.Where(entity => entity.rono.Contains(keyword));
 
             var readForRoOngoingOp = Query.Where(x =>
-                    (!hasIdLineFilter ? true : x.id_line == id_line) &&
+                    (!hasIdLineFilter || x.id_line == id_line) &&
                     x.IsDeleted == false
                 );
 
             var readForSummaryOperator = dbSetSummaryOperator.Where(x =>
-                    (!hasNpkFilter ? true : x.npk == npk) &&
-                    (!hasIdProsesFilter ? true : x.id_proses == id_proses) &&
+                    (!hasNpkFilter || x.npk == npk) &&
+                    (!hasIdProsesFilter || x.id_proses == id_proses) &&
                     x.IsDeleted == false
                 );
 
