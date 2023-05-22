@@ -209,7 +209,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ReportControllers
             }
         }
 
-        [HttpGet("ro-operator-hourly")]
+        [HttpGet("ro-operator-hourly/web")]
         public IActionResult GetRoOperatorHourlyWebReport(string area, int line, string proses, DateTimeOffset? dateFrom, DateTimeOffset? dateTo)
         {
             try
@@ -239,6 +239,177 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ReportControllers
                 return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
             }
 
+        }
+
+        [HttpGet("ro-operator-hourly/web/download")]
+        public IActionResult GetRoOperatorHourlyWebXls(string area, int line, string proses, DateTimeOffset? dateFrom, DateTimeOffset? dateTo) 
+        {
+            try
+            {
+                if (dateTo == null)
+                    dateTo = DateTimeOffset.UtcNow;
+
+                if (dateFrom == null)
+                    dateFrom = DateTimeOffset.MinValue;
+
+                byte[] xlsInBytes;
+                var xls = facade.GetRoOperatorHourlyWebExcel(area, line, proses, dateFrom.GetValueOrDefault(), dateTo.GetValueOrDefault());
+
+                string filename = "Laporan Per Jam Operator";
+                if (line != 0) filename += " " + line;
+                if (dateFrom != null) filename += " " + ((DateTime)dateFrom.Value.DateTime).ToString("dd-MM-yyyy");
+                if (dateTo != null) filename += " " + ((DateTime)dateTo.Value.DateTime).ToString("dd-MM-yyyy");
+                filename += ".xlsx";
+
+                xlsInBytes = xls.ToArray();
+                var file = File(xlsInBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
+                return file;
+            }
+            
+            catch(Exception e)
+            {
+                Dictionary<string, object> Result =
+                  new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                  .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
+        [HttpGet("ro-operator-hourly/per-day")]
+        public IActionResult GetRoOperatorHourlyPerDayReport(string unit, int line, string npk)
+        {
+            try
+            {
+                var data = facade.GetRoOperatorHourlyPerDayReport(unit, line, npk);
+
+                return Ok(new
+                {
+                    apiVersion = ApiVersion,
+                    data = data.Item1,
+                    info = new { total = data.Item2 },
+                    message = General.OK_MESSAGE,
+                    statusCode = General.OK_STATUS_CODE
+                });
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
+        [HttpGet("ro-operator-hourly/per-hour")]
+        public IActionResult GetRoOperatorHourlyPerHourReport(string unit, int line, string npk, DateTimeOffset? date)
+        {
+            try
+            {
+                if (date == null)
+                    date = DateTimeOffset.UtcNow;
+
+                var data = facade.GetRoOperatorHourlyPerDayPerHourReport(unit, line, npk, date);
+
+                return Ok(new
+                {
+                    apiVersion = ApiVersion,
+                    data = data.Item1,
+                    info = new { total = data.Item2 },
+                    message = General.OK_MESSAGE,
+                    statusCode = General.OK_STATUS_CODE
+                });
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
+        [HttpGet("ro-operator-hourly/per-ro")]
+        public IActionResult GetRoOperatorHourlyPerRoReport(string unit, int line, string npk, DateTimeOffset? date, string hour)
+        {
+            try
+            {
+                if (date == null)
+                    date = DateTimeOffset.UtcNow;
+
+                var data = facade.GetRoOperatorHourlyPerDayPerHourPerRoReport(unit, line, npk, date, hour);
+
+                return Ok(new
+                {
+                    apiVersion = ApiVersion,
+                    data = data.Item1,
+                    info = new { total = data.Item2 },
+                    message = General.OK_MESSAGE,
+                    statusCode = General.OK_STATUS_CODE
+                });
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
+        [HttpGet("ro-operator-hourly")]
+        public IActionResult GetRoOperatorHourlyReport(string unit, int line, string npk, DateTimeOffset? date, string hour, string ro)
+        {
+            try
+            {
+                if (date == null)
+                    date = DateTimeOffset.UtcNow;
+
+                var data = facade.GetRoOperatorHourlyReport(unit, line, npk, date, hour, ro);
+
+                return Ok(new
+                {
+                    apiVersion = ApiVersion,
+                    data = data,
+                    message = General.OK_MESSAGE,
+                    statusCode = General.OK_STATUS_CODE
+                });
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
+        }
+
+        [HttpGet("ro-operator-hourly/download")]
+        public IActionResult GetRoOperatorHourlyXls(string unit, int line, DateTimeOffset? date, string ro)
+        {
+            try
+            {
+                if (date == null)
+                    date = DateTimeOffset.UtcNow;
+
+                byte[] xlsInBytes;
+                var xls = facade.GetRoOperatorHourlyExcel(unit, line, date.GetValueOrDefault(), ro);
+
+                string filename = "Laporan Per Jam Operator";
+                if (!string.IsNullOrWhiteSpace(unit)) filename += " " + unit;
+                if (date != null) filename += " " + ((DateTime)date.Value.DateTime).ToString("dd-MM-yyyy");
+                filename += ".xlsx";
+
+                xlsInBytes = xls.ToArray();
+                var file = File(xlsInBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
+                return file;
+            }
+            catch (Exception e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.INTERNAL_ERROR_STATUS_CODE, e.Message)
+                    .Fail();
+                return StatusCode(General.INTERNAL_ERROR_STATUS_CODE, Result);
+            }
         }
     }
 }

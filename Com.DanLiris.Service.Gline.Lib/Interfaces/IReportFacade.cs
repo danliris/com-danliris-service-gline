@@ -15,5 +15,11 @@ namespace Com.DanLiris.Service.Gline.Lib.Interfaces
         Tuple<List<RoDetailOptReportViewModel>, int> GetRoDetailOptReport(string ro, string unit, int line, DateTimeOffset? date);
         MemoryStream GetRoDetailOptExcel(string ro, string unit, int line, DateTimeOffset? date);
         Tuple<List<RoOperatorHourlyWebReportViewModel>, int> GetRoOperatorHourlyWebReport(string area, int line, string proses, DateTimeOffset? dateFrom, DateTimeOffset? dateTo);
+        MemoryStream GetRoOperatorHourlyWebExcel(string area, int line, string proses, DateTimeOffset? dateFrom, DateTimeOffset? dateTo);
+        Tuple<List<RoOperatorHourlyPerDayReportViewModel>, int> GetRoOperatorHourlyPerDayReport(string unit, int line, string npk);
+        Tuple<List<RoOperatorHourlyPerDayPerHourReportViewModel>, int> GetRoOperatorHourlyPerDayPerHourReport(string unit, int line, string npk, DateTimeOffset? date);
+        Tuple<List<RoOperatorHourlyPerDayPerHourPerRoReportViewModel>, int> GetRoOperatorHourlyPerDayPerHourPerRoReport(string unit, int line, string npk, DateTimeOffset? date, string hour);
+        RoOperatorHourlyDataReportViewModel GetRoOperatorHourlyReport(string unit, int line, string npk, DateTimeOffset? date, string hour, string ro);
+        MemoryStream GetRoOperatorHourlyExcel(string unit, int line, DateTimeOffset? date, string ro);
     }
 }
