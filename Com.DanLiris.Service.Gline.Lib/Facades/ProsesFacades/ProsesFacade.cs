@@ -10,6 +10,7 @@ using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
@@ -48,7 +49,13 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ProsesFacades
                {
                    Id = s.Id,
                    nama_proses = s.nama_proses,
-                   cycle_time = s.cycle_time
+                   cycle_time = s.cycle_time,
+                   CreatedAgent = s.CreatedAgent,
+                   CreatedBy = s.CreatedBy,
+                   CreatedUtc = s.CreatedUtc,
+                   LastModifiedAgent = s.LastModifiedAgent,
+                   LastModifiedBy = s.LastModifiedBy,
+                   LastModifiedUtc = s.LastModifiedUtc
                });
 
 
@@ -85,6 +92,11 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ProsesFacades
                     Created = await dbContext.SaveChangesAsync();
                     transaction.Commit();
                 }
+                catch (SqlException e)
+                {
+                    transaction.Rollback();
+                    throw e;
+                }
                 catch (Exception e)
                 {
                     transaction.Rollback();
@@ -107,11 +119,14 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ProsesFacades
                     var existingModel = this.dbSet.AsNoTracking()
                         .SingleOrDefault(pr => pr.Id == id && !pr.IsDeleted);
 
-                    if (existingModel != null && id == model.Id)
+                    if (existingModel != null)
                     {
-                        EntityExtension.FlagForUpdate(model, user, USER_AGENT);
+                        existingModel.nama_proses = model.nama_proses;
+                        existingModel.cycle_time = model.cycle_time;
 
-                        this.dbContext.Update(model);
+                        EntityExtension.FlagForUpdate(existingModel, user, USER_AGENT);
+
+                        this.dbContext.Update(existingModel);
 
                         Updated = await dbContext.SaveChangesAsync();
                         var updatedModel = this.dbSet.AsNoTracking()
@@ -122,6 +137,11 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ProsesFacades
                     {
                         throw new Exception("Invalid Id");
                     }
+                }
+                catch (SqlException e)
+                {
+                    transaction.Rollback();
+                    throw e;
                 }
                 catch (Exception e)
                 {

@@ -63,7 +63,13 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.LineControllers
                     s.nama_line,
                     s.nama_gedung,
                     s.kode_unit,
-                    s.nama_unit
+                    s.nama_unit,
+                    s.CreatedAgent,
+                    s.CreatedBy,
+                    s.CreatedUtc,
+                    s.LastModifiedAgent,
+                    s.LastModifiedBy,
+                    s.LastModifiedUtc
                 }));
 
                 return Ok(new

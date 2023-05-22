@@ -50,7 +50,13 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.LineFacades
                    nama_line = s.nama_line,
                    nama_gedung = s.nama_gedung,
                    kode_unit = s.kode_unit,
-                   nama_unit = s.nama_unit
+                   nama_unit = s.nama_unit,
+                   CreatedAgent = s.CreatedAgent,
+                   CreatedBy = s.CreatedBy,
+                   CreatedUtc = s.CreatedUtc,
+                   LastModifiedAgent = s.LastModifiedAgent,
+                   LastModifiedBy = s.LastModifiedBy,
+                   LastModifiedUtc = s.LastModifiedUtc
                });
 
 

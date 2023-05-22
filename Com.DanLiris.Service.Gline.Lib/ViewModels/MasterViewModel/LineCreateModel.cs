@@ -25,12 +25,12 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.MasterViewModel
 
             if (string.IsNullOrWhiteSpace(kode_unit))
             {
-                yield return new ValidationResult("Kode Unit is required", new List<string> { "kode_unit" });
+                yield return new ValidationResult("Unit is required", new List<string> { "kode_unit" });
             }
 
             if (string.IsNullOrWhiteSpace(nama_unit))
             {
-                yield return new ValidationResult("Nama unit is required", new List<string> { "nama_unit" });
+                yield return new ValidationResult("Unit is required", new List<string> { "nama_unit" });
             }
         }
     }

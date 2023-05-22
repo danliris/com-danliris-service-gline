@@ -13,12 +13,12 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.MasterViewModel
         {
             if (string.IsNullOrWhiteSpace(nama_proses))
             {
-                yield return new ValidationResult("Nama proses is required", new List<string> { "nama_proses_view" });
+                yield return new ValidationResult("Nama proses is required", new List<string> { "nama_proses" });
             }
 
             if (cycle_time == 0)
             {
-                yield return new ValidationResult("Cycle time minimum value is more than zero", new List<string> { "cycle_time_view" });
+                yield return new ValidationResult("Cycle time minimum value is more than zero", new List<string> { "cycle_time" });
             }
         }
     }

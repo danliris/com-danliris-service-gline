@@ -32,10 +32,6 @@ namespace Com.DanLiris.Service.Gline.Lib
             {
                 relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
-
-            modelBuilder.Entity<Proses>()
-               .HasIndex(i => i.nama_proses)
-               .IsUnique();
         }
     }
 }
