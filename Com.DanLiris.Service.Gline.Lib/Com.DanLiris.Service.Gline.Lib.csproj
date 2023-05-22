@@ -13,6 +13,8 @@
     <Compile Remove="Migrations\20230509085552_CreateTransaksiQc.Designer.cs" />
     <Compile Remove="Migrations\20230511031928_DeleteShiftAndModifySummaryOperator.cs" />
     <Compile Remove="Migrations\20230511031928_DeleteShiftAndModifySummaryOperator.Designer.cs" />
+    <Compile Remove="Migrations\20230522090527_AddIdUnitColumnInLine.cs" />
+    <Compile Remove="Migrations\20230522090527_AddIdUnitColumnInLine.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

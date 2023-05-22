@@ -15,6 +15,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Models.MasterModel
         [Required]
         [MaxLength(32)]
         public string nama_gedung { get; set; }
+        public int id_unit { get; set; }
         [Required]
         [MaxLength(64)]
         public string kode_unit { get; set; }
