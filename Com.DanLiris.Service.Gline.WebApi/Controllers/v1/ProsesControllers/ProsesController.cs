@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CsvHelper;
 using Com.DanLiris.Service.Gline.Lib.ViewModels.IntegrationViewModel;
+using System.Data.SqlClient;
 
 namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
 {
@@ -62,6 +63,12 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
                     s.Id,
                     s.nama_proses,
                     s.cycle_time,
+                    s.CreatedAgent,
+                    s.CreatedBy,
+                    s.CreatedUtc,
+                    s.LastModifiedAgent,
+                    s.LastModifiedBy,
+                    s.LastModifiedUtc
                 }));
 
                 return Ok(new
@@ -153,6 +160,13 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
                     .Fail(e);
                 return BadRequest(Result);
             }
+            catch (SqlException e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.BAD_REQUEST_STATUS_CODE, General.BAD_REQUEST_MESSAGE)
+                    .Fail(e.Message);
+                return BadRequest(Result);
+            }
             catch (Exception e)
             {
                 Dictionary<string, object> Result =
@@ -189,6 +203,13 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.ProsesControllers
                     .Fail(e);
                 return BadRequest(Result);
 
+            }
+            catch (SqlException e)
+            {
+                Dictionary<string, object> Result =
+                    new ResultFormatter(ApiVersion, General.BAD_REQUEST_STATUS_CODE, General.BAD_REQUEST_MESSAGE)
+                    .Fail(e.Message);
+                return BadRequest(Result);
             }
             catch (Exception e)
             {
