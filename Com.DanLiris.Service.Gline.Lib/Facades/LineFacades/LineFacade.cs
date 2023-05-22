@@ -49,6 +49,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.LineFacades
                    Id = s.Id,
                    nama_line = s.nama_line,
                    nama_gedung = s.nama_gedung,
+                   id_unit = s.id_unit,
                    kode_unit = s.kode_unit,
                    nama_unit = s.nama_unit,
                    CreatedAgent = s.CreatedAgent,

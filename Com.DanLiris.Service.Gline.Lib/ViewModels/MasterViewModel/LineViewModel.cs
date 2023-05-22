@@ -9,6 +9,7 @@ namespace Com.DanLiris.Service.Gline.Lib.ViewModels.MasterViewModel
     {
         public int nama_line { get; set; }
         public string nama_gedung { get; set; }
+        public int id_unit { get; set; }
         public string kode_unit { get; set; }
         public string nama_unit { get; set; }
     }
