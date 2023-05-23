@@ -52,7 +52,8 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
                     s.smv,
                     s.quantity,
                     s.nama_gedung,
-                    s.nama_line
+                    s.nama_line,
+                    s.nama_unit
                 }));
 
                 return Ok(new
@@ -275,7 +276,7 @@ namespace Com.DanLiris.Service.Gline.WebApi.Controllers.v1.SettingRoControllers
         public async Task<IActionResult> Put([FromRoute] string id, [FromBody] SettingRoViewModel vm)
         {
             identityService.Username = User.Claims.Single(p => p.Type.Equals("username")).Value;
-
+            vm.isEdit = true;
             SettingRo m = mapper.Map<SettingRo>(vm);
 
             IValidateService validateService = (IValidateService)serviceProvider.GetService(typeof(IValidateService));

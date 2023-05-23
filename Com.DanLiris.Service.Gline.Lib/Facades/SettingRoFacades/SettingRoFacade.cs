@@ -50,7 +50,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
 
             List<string> searchAttributes = new List<string>()
             {
-                "rono", "nama_gedung", "nama_unit"
+                "rono", "nama_gedung", "nama_unit", "nama_line"
             };
 
             Query = QueryHelper<SettingRo>.ConfigureSearch(Query, searchAttributes, Keyword);
@@ -65,6 +65,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                    quantity = s.quantity,
                    nama_gedung = s.nama_gedung,
                    nama_line = s.nama_line,
+                   nama_unit = s.nama_unit,
                });
 
 
@@ -97,6 +98,19 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
                 {
                     EntityExtension.FlagForCreate(model, username, USER_AGENT);
                     this.dbSet.Add(model);
+
+                    var relatedModel = this.dbSet.AsNoTracking().Where(x => x.rono == model.rono && x.smv != model.smv && !x.IsDeleted).ToList();
+                    if (relatedModel.Count > 0)
+                    {
+                        foreach (var i in relatedModel)
+                        {
+                            i.smv = model.smv;
+                            i.jam_target = model.jam_target;
+                            EntityExtension.FlagForUpdate(i, username, USER_AGENT);
+                            this.dbContext.Update(i);
+                        }
+                    }    
+
                     Created = await dbContext.SaveChangesAsync();
                     transaction.Commit();
                 }
@@ -124,13 +138,37 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
 
                     if (existingModel != null && id == model.Id)
                     {
-                        EntityExtension.FlagForUpdate(model, user, USER_AGENT);
+                        var smv = existingModel.smv;
+                        var jam_target = existingModel.jam_target;
 
-                        this.dbContext.Update(model);
+                        if(smv != model.smv || jam_target != model.jam_target)
+                        {
+                            var relatedModel = this.dbSet.AsNoTracking().Where(x => x.Id != model.Id && x.rono == model.rono && !x.IsDeleted).ToList();
+
+                            if(relatedModel != null && relatedModel.Count > 0)
+                            {
+                                foreach(var i in relatedModel)
+                                {
+                                    i.smv = model.smv;
+                                    i.jam_target = model.jam_target;
+                                    EntityExtension.FlagForUpdate(i, user, USER_AGENT);
+
+                                    this.dbContext.Update(i);
+                                }
+                            }
+                        }
+
+                        existingModel.rono = model.rono;
+                        existingModel.quantity = model.quantity;
+                        existingModel.setting_date = model.setting_date;
+                        existingModel.setting_time = model.setting_time;
+                        existingModel.smv = model.smv;
+                        existingModel.jam_target = model.jam_target;
+
+                        EntityExtension.FlagForUpdate(existingModel, user, USER_AGENT);
+                        this.dbContext.Update(existingModel);
 
                         Updated = await dbContext.SaveChangesAsync();
-                        var updatedModel = this.dbSet.AsNoTracking()
-                           .SingleOrDefault(pr => pr.Id == model.Id && !pr.IsDeleted);
                         transaction.Commit();
                     }
                     else
@@ -182,9 +220,9 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
             List<CostCalculationRoViewModel> data = new List<CostCalculationRoViewModel>();
             List<SqlParameter> param = new List<SqlParameter>();
 
-            cmd = $"SELECT TOP {Size} RO_Number, Quantity, SMV_Sewing, Article FROM CostCalculationGarments WHERE RO_Number LIKE @key AND IsDeleted = 0";
+            cmd = $"SELECT TOP {Size} RO_Number, Quantity, SMV_Sewing, Article FROM CostCalculationGarments WHERE RO_Number LIKE @keyword AND IsApprovedKadivMD = 1 AND IsDeleted = 0";
 
-            param.Add(new SqlParameter("key", "%" + Keyword + "%"));
+            param.Add(new SqlParameter("keyword", "%" + Keyword + "%"));
             var reader = salesDbContext.ExecuteReader(cmd, param);
 
             while (reader.Read())
