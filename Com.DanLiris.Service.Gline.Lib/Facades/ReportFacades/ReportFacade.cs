@@ -31,7 +31,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ReportFacades
                          where b.nama_unit == (!string.IsNullOrWhiteSpace(unit) ? unit : b.nama_unit)
                          && a.nama_line == (line <= 0 ? a.nama_line : line)
                          && a.CreatedUtc.Date >= dateFrom.Value.Date
-                         && a.CreatedUtc.Date >= dateTo.Value.Date
+                         && a.CreatedUtc.Date <= dateTo.Value.Date
                          && a.nama_proses == "QC ENDLINE"
                          && a.pass == true
                          && a.IsDeleted == false
@@ -60,7 +60,7 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.ReportFacades
                              where b.nama_unit == (!string.IsNullOrWhiteSpace(unit) ? unit : b.nama_unit)
                              && a.nama_line == (line <= 0 ? a.nama_line : line)
                              && a.CreatedUtc.Date >= dateFrom.Value.Date
-                             && a.CreatedUtc.Date >= dateTo.Value.Date
+                             && a.CreatedUtc.Date <= dateTo.Value.Date
                              && a.nama_proses == "QC ENDLINE"
                              && a.pass == true
                              && a.IsDeleted == false

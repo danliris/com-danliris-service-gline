@@ -217,12 +217,26 @@ namespace Com.DanLiris.Service.Gline.Lib.Facades.SettingRoFacades
         public ReadResponse<object> GetRoLoader(int Page = 1, int Size = 25, string Order = "{}", string Keyword = null, string Filter = "{}")
         {
             string cmd = "";
+            string kode_unit = string.Empty;
+
             List<CostCalculationRoViewModel> data = new List<CostCalculationRoViewModel>();
             List<SqlParameter> param = new List<SqlParameter>();
 
-            cmd = $"SELECT TOP {Size} RO_Number, Quantity, SMV_Sewing, Article FROM CostCalculationGarments WHERE RO_Number LIKE @keyword AND IsApprovedKadivMD = 1 AND IsDeleted = 0";
+            Dictionary<string, string> FilterDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(Filter);
+            bool hasUnitCodeFilter = FilterDictionary.ContainsKey("kode_unit") && FilterDictionary.TryGetValue("kode_unit", out kode_unit);
+
+            cmd = $"SELECT TOP {Size} RO_Number, Quantity, SMV_Sewing, Article FROM CostCalculationGarments WHERE RO_Number LIKE @keyword AND UnitCode = @filterUnit AND IsApprovedKadivMD = 1 AND IsDeleted = 0 AND CreatedUtc > DATEADD(year,-1,GETDATE())";
 
             param.Add(new SqlParameter("keyword", "%" + Keyword + "%"));
+            if (hasUnitCodeFilter)
+            {
+                param.Add(new SqlParameter("filterUnit", kode_unit));
+            }
+            else
+            {
+                cmd = cmd.Replace(" AND UnitCode = @filterUnit", string.Empty);
+            }
+
             var reader = salesDbContext.ExecuteReader(cmd, param);
 
             while (reader.Read())
